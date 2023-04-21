@@ -13,5 +13,5 @@ Receives only strings, but supports `Math` variables like `Math.PI`
 ```csharp
 using Eval;
 
-Eval("2 + Math.PI");
+Eval("-2 + math.pi");
 ```

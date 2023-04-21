@@ -12,7 +12,13 @@ namespace Eval
             { "-", (x, y) => x - y },
             { "*", (x, y) => x * y },
             { "/", (x, y) => x / y },
-            { "%", (x, y) => x % y }
+            { "%", (x, y) => x % y },
+        };
+
+        public static Dictionary<string, Func<double, double>> UnaryOperators { get; } = new()
+        {
+            { "-", (x) => -x },
+            { "+", (x) => +x },
         };
 
         public static Dictionary<string, double> Variables { get; } = new()
@@ -30,10 +36,10 @@ namespace Eval
     public class ASTNode
     {
         public string Op { get; set; } = "";
-        public string Lhs { get; set; } = "";
+        public object Lhs { get; set; }
         public ASTNode? Rhs { get; set; }
 
-        public ASTNode(string op, string lhs, ASTNode rhs)
+        public ASTNode(string op, object lhs, ASTNode rhs)
         {
             Op = op;
             Lhs = lhs;
@@ -89,7 +95,8 @@ namespace Eval
                 return "";
             }
 
-            if (Utilities.Operators.ContainsKey(Expr[..1]))
+            if (Utilities.Operators.ContainsKey(Expr[..1]) ||
+                Utilities.UnaryOperators.ContainsKey(Expr[..1]))
             {
                 token = Expr[..1];
                 Expr = Expr[1..];
@@ -99,6 +106,7 @@ namespace Eval
             for (int i = 0; i < Expr.Length; i++)
             {
                 if (Utilities.Operators.ContainsKey(Expr[i..(i + 1)]) ||
+                    Utilities.UnaryOperators.ContainsKey(Expr[i..(i + 1)]) ||
                     Expr[i..(i + 1)] == " ")
                 {
                     token = Expr[0..i];
@@ -141,14 +149,15 @@ namespace Eval
     {
         public static string ParsePrimary(Lexer lexer)
         {
-            string lhs = lexer.Next();
+            string token = lexer.Next();
 
-            if (lhs == "")
-            {
-                throw new FormatException("Expected primary expression but reached the end of expression!");
-            }
-
-            return lhs;
+            return Utilities.UnaryOperators.ContainsKey(token)
+                ? $"{token}{ParsePrimary(lexer)}"
+                : token switch
+                {
+                    "" => throw new FormatException("Expected primary expression but reached the end of expression!"),
+                    _ => token
+                };
         }
 
         public static ASTNode Parse(Lexer lexer)
@@ -161,7 +170,7 @@ namespace Eval
                 "" => new(lhs),
                 _ => Utilities.Operators.ContainsKey(op)
                     ? new(op, lhs, Parse(lexer))
-                    : throw new FormatException($"Unknow binary operator `{op}` found while parsing!"),
+                    : throw new FormatException($"Unknown binary operator `{op}`!"),
             };
         }
     }
@@ -174,11 +183,10 @@ namespace Eval
                 " 17% 2.0 * Math.PI/32.0 + 6",
                 "1",
                 "Math.PI*100-9",
-                "10%  9 ",
+                "-10%  6 ",
                 "Math.E",
                 // TODO: Support these
                 // "Math.sin(2.0 * Math.PI)",
-                // "-10",
                 // "(10/4)+2",
             };
 
@@ -186,7 +194,7 @@ namespace Eval
 
             foreach (string expr in exprs)
             {
-                Console.Write($"Result: {Eval(expr)}\n\nAST: ");
+                Console.Write($"Expression: {expr}\nResult: {Eval(expr)}\nAST: ");
                 ASTNode.PrintAST(Parser.Parse(new Lexer(expr)));
                 Console.WriteLine();
                 Console.WriteLine("============================");
@@ -198,12 +206,17 @@ namespace Eval
             return Evaluate(Parser.Parse(new Lexer(expr)));
         }
 
-        public static double Evaluate(ASTNode node)
+        public static double Evaluate(object node)
         {
-            return node.Op switch
+            return node switch
             {
-                "" => Evaluate(node.Lhs),
-                _ => Utilities.Operators[node.Op](Evaluate(node.Lhs), Evaluate(node.Rhs!)),
+                string str => Evaluate(str),
+                ASTNode astNode => astNode.Op switch
+                {
+                    "" => Evaluate(astNode.Lhs),
+                    _ => Utilities.Operators[astNode.Op](Evaluate(astNode.Lhs), Evaluate(astNode.Rhs!)),
+                },
+                _ => throw new FormatException($"Unknown type of node `{node.GetType()}`!"),
             };
         }
 
@@ -213,8 +226,8 @@ namespace Eval
                                    CultureInfo.InvariantCulture, out double number)
                 ? number
                 : Utilities.Variables.TryGetValue(value, out double var)
-                ? var :
-                    throw new FormatException($"Unknown variable {value}!");
+                ? var
+                : throw new FormatException($"Unknown variable `{value}`!");
         }
     }
 }
