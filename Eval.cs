@@ -273,6 +273,7 @@ namespace Eval
         }
     }
 
+#nullable enable
     public static class Evaluator
     {
         public static double Evaluate(object expr)
@@ -316,6 +317,7 @@ namespace Eval
                 _ => throw new ArgumentException($"Unknown expression type '{expr.GetType()}'"),
             };
         }
+#nullable disable
 
         public static double Evaluate(string expr)
         {

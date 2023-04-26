@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFrameworks>net5.0;net6.0;net7.0</TargetFrameworks>
 		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+		<Nullable>disable</Nullable>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
 		<PackageId>Eval.cs</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.1.2</Version>
 		<Authors>LucasTavaresA</Authors>
 		<Copyright>MIT</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
