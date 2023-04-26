@@ -1,10 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
+		<PackageId>Eval.cs</PackageId>
+		<Version>0.0.2</Version>
+		<Authors>LucasTavaresA</Authors>
+		<Copyright>MIT</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+		<Description>Mathematical expressions evaluator thats supports `Math.*` and `IEnumerator.*()`, using only `System.*`.</Description>
+		<RepositoryUrl>https://github.com/lucastavaresa/eval.cs</RepositoryUrl>
+		<PackageTags>evaluator;eval;math;expressions;calculate</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 </Project>
