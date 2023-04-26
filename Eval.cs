@@ -8,112 +8,11 @@ using static Eval.Parser;
 
 namespace Eval
 {
-    public static class Runtime
+    public static class Expression
     {
-        public static Dictionary<string, double> Variables { get; } = new()
+        public class BinaryOperator
         {
-            { "Math.PI", Math.PI },
-            { "Math.E", Math.E },
-            { "Math.Tau", Math.Tau },
-        };
-
-        public static Dictionary<string, Func<double[], double>> VariadicFunctions { get; } = new()
-        {
-            { "IEnumerable.Average", (args) => args.Average() },
-            { "IEnumerable.Max", (args) => args.Max() },
-            { "IEnumerable.Min", (args) => args.Min() },
-            { "IEnumerable.Sum", (args) => args.Sum() },
-            { "IEnumerable.Last", (args) => args.Last() },
-            { "IEnumerable.Length", (args) => args.Length },
-            { "IEnumerable.Count", (args) => args.Length },
-            { "IEnumerable.First", (args) => args.First() },
-            { "IEnumerable.Single", (args) => args.Single() },
-            { "IEnumerable.Last", (args) => args.Last() },
-            { "IEnumerable.GetHashCode", (args) => args.GetHashCode() },
-            { "IEnumerable.SingleOrDefault", (args) => args.SingleOrDefault() },
-            { "IEnumerable.FirstOrDefault", (args) => args.FirstOrDefault() },
-            { "IEnumerable.LastOrDefault", (args) => args.LastOrDefault() },
-        };
-
-        public static Dictionary<string, Delegate> Functions { get; } = new()
-        {
-            { "Math.Abs", (Func<double, double>)Math.Abs },
-            { "Math.Acos", Math.Acos },
-            { "Math.Acosh", Math.Acosh },
-            { "Math.Asin", Math.Asin },
-            { "Math.Asinh", Math.Asinh },
-            { "Math.Atan", Math.Atan },
-            { "Math.Atan2", Math.Atan2 },
-            { "Math.Atanh", Math.Atanh },
-            { "Math.BitDecrement", Math.BitDecrement },
-            { "Math.BitIncrement", Math.BitIncrement },
-            { "Math.Cbrt", Math.Cbrt },
-            { "Math.Ceiling", (Func<double, double>)Math.Ceiling },
-            { "Math.CopySign", Math.CopySign },
-            { "Math.Cos", Math.Cos },
-            { "Math.Cosh", Math.Cosh },
-            { "Math.Exp", Math.Exp },
-            { "Math.Floor", (Func<double, double>)Math.Floor },
-            { "Math.FusedMultiplyAdd", Math.FusedMultiplyAdd },
-            { "Math.IEEERemainder", Math.IEEERemainder },
-            { "Math.Log", (Func<double, double>)Math.Log },
-            { "Math.Log10", Math.Log10 },
-            { "Math.Log2", Math.Log2 },
-            { "Math.MaxMagnitude", Math.MaxMagnitude },
-            { "Math.MinMagnitude", Math.MinMagnitude },
-            { "Math.Pow", Math.Pow },
-            { "Math.ReciprocalEstimate", Math.ReciprocalEstimate },
-            { "Math.ReciprocalSqrtEstimate", Math.ReciprocalSqrtEstimate },
-            { "Math.Round", (Func<double, double>)Math.Round },
-            { "Math.Sin", Math.Sin },
-            { "Math.Sinh", Math.Sinh },
-            { "Math.Sqrt", Math.Sqrt },
-            { "Math.Tan", Math.Tan },
-            { "Math.Tanh", Math.Tanh },
-            { "Math.Truncate", (Func<double, double>)Math.Truncate },
-        };
-
-        public static Dictionary<string, Func<double, double, double>> BinaryOperators { get; } = new()
-        {
-            { "+", (left, right) => left + right },
-            { "-", (left, right) => left - right },
-            { "*", (left, right) => left * right },
-            { "/", (left, right) => left / right },
-            { "%", (left, right) => left % right }
-        };
-
-        public static Dictionary<string, Func<double, double>> UnaryOperators { get; } = new()
-        {
-            { "-", (arg) => -arg }
-        };
-
-        public static Dictionary<string, int> Precedence { get; } = new()
-        {
-            { "+", 0 },
-            { "-", 0 },
-            { "*", 1 },
-            { "/", 1 },
-            { "%", 1 },
-        };
-    }
-
-    public abstract class Expression
-    {
-        public class UnaryOperator : Expression
-        {
-            public UnaryOperator(string op, Expression operand)
-            {
-                Op = op;
-                Operand = operand;
-            }
-
-            public string Op { get; set; }
-            public Expression Operand { get; set; }
-        }
-
-        public class BinaryOperator : Expression
-        {
-            public BinaryOperator(string op, Expression left, Expression right)
+            public BinaryOperator(string op, object left, object right)
             {
                 Op = op;
                 Left = left;
@@ -121,45 +20,37 @@ namespace Eval
             }
 
             public string Op { get; set; }
-            public Expression Left { get; set; }
-            public Expression Right { get; set; }
+            public object Left { get; set; }
+            public object Right { get; set; }
         }
 
-        public class Funcall : Expression
+        public class Funcall
         {
-            public Funcall(string name, List<Expression> args)
+            public Funcall(string name, List<object> args)
             {
                 Name = name;
                 Args = args;
             }
 
             public string Name { get; set; }
-            public List<Expression> Args { get; set; }
-        }
-
-        public class Symbol : Expression
-        {
-            public Symbol(string value)
-            {
-                Value = value;
-            }
-
-            public string Value { get; set; }
+            public List<object> Args { get; set; }
         }
 
         /// <summary>
         /// Returns a string representation of the expressions tree
         /// </summary>
-        public static string GetExprTree(Expression expr, string indent = "")
+        public static string GetExprTree(object expr, string indent = "")
         {
             indent += "  ";
 
             return expr switch
             {
-                UnaryOperator unary => $"{indent}UnaryOperator({unary.Op})\n{GetExprTree(unary.Operand, indent)}",
-                BinaryOperator binary => $"{indent}BinaryOperator({binary.Op})\n{GetExprTree(binary.Left, indent)}{GetExprTree(binary.Right, indent)}",
-                Funcall funcall => $"{indent}Funcall({funcall.Name})\n{string.Concat(funcall.Args.Select(arg => GetExprTree(arg, indent)))}",
-                Symbol symbol => $"{indent}Symbol({symbol.Value})\n",
+                BinaryOperator binary
+                    => $"\n{indent}({binary.Op}{GetExprTree(binary.Left, indent)}{GetExprTree(binary.Right, indent)})",
+                Funcall funcall
+                    => $"\n{indent}({funcall.Name}{string.Concat(funcall.Args.Select(arg => GetExprTree(arg, indent)))})",
+                string str
+                    => $" {str}",
                 _ => throw new ArgumentException($"Unexpected expression type '{expr.GetType()}'"),
             };
         }
@@ -180,36 +71,9 @@ namespace Eval
         }
 
         /// <summary>
-        /// Tokens that are not operators
+        /// Returns a token back in the Src
         /// </summary>
-        private static string[] FlowTokens { get; } = { "(", ")", "," };
-
-        /// <summary>
-        /// All the tokens
-        /// </summary>
-        private static string[] Tokens { get; } =
-            BinaryOperators.Keys.Concat(UnaryOperators.Keys).Concat(FlowTokens).ToArray();
-
-        /// <summary>
-        /// Check if is a token or any of the provided strings
-        /// </summary>
-        public static bool IsTokenOr(string val, params string[] tokens)
-        {
-            foreach (string token in Tokens.Concat(tokens))
-            {
-                if (token == val)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Places the previous token back in the Src
-        /// </summary>
-        public void Prev(string token)
+        public void Return(string token)
         {
             Src = token + Src;
         }
@@ -250,6 +114,32 @@ namespace Eval
         }
 
         /// <summary>
+        /// Tokens that are not operators
+        /// </summary>
+        private static string[] FlowTokens { get; } = { "(", ")", "," };
+
+        /// <summary>
+        /// All the tokens
+        /// </summary>
+        private static string[] Tokens { get; } = BinaryOperators.Keys.Concat(FlowTokens).ToArray();
+
+        /// <summary>
+        /// Check if is a token or any of the provided strings
+        /// </summary>
+        private static bool IsTokenOr(string val, params string[] tokens)
+        {
+            foreach (string token in Tokens.Concat(tokens))
+            {
+                if (token == val)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns a string representation of the tokens separated by the
         /// lexer
         /// </summary>
@@ -277,19 +167,20 @@ namespace Eval
 
     public static class Parser
     {
-        private static Expression ParsePrimary(Lexer lexer)
+        private static object ParsePrimary(Lexer lexer)
         {
             string token = lexer.Next();
 
             if (token != "")
             {
-                if (UnaryOperators.ContainsKey(token))
+                if (token == "-")
                 {
-                    return new UnaryOperator(token, Parse(lexer));
+                    // in case of a minus in front of a number
+                    return $"{token}{lexer.Next()}";
                 }
                 else if (token == "(")
                 {
-                    Expression expr = Parse(lexer);
+                    object expr = Parse(lexer);
                     token = lexer.Next();
 
                     return token != ")"
@@ -306,7 +197,7 @@ namespace Eval
 
                     if (nextToken == "(")
                     {
-                        List<Expression> args = new();
+                        List<object> args = new();
                         nextToken = lexer.Next();
 
                         if (nextToken == ")")
@@ -319,7 +210,7 @@ namespace Eval
                             throw new FormatException("Unexpected end of input");
                         }
 
-                        lexer.Prev(nextToken);
+                        lexer.Return(nextToken);
                         args.Add(Parse(lexer));
 
                         nextToken = lexer.Next();
@@ -337,10 +228,10 @@ namespace Eval
                     {
                         if (nextToken != "")
                         {
-                            lexer.Prev(nextToken);
+                            lexer.Return(nextToken);
                         }
 
-                        return new Symbol(token);
+                        return token;
                     }
                 }
             }
@@ -350,33 +241,33 @@ namespace Eval
             }
         }
 
-        public static Expression Parse(Lexer lexer, int precedence = 0)
+        public static object Parse(Lexer lexer, int precedence = 0)
         {
             if (precedence >= 2)
             {
                 return ParsePrimary(lexer);
             }
 
-            Expression left = Parse(lexer, precedence + 1);
+            object left = Parse(lexer, precedence + 1);
             string op = lexer.Next();
 
             if (op != "")
             {
                 if (BinaryOperators.TryGetValue(op, out _) && Precedence[op] == precedence)
                 {
-                    Expression right = Parse(lexer, precedence);
+                    object right = Parse(lexer, precedence);
                     return new BinaryOperator(op, left, right);
                 }
                 else
                 {
-                    lexer.Prev(op);
+                    lexer.Return(op);
                 }
             }
 
             return left;
         }
 
-        public static Expression Parse(string expression)
+        public static object Parse(string expression)
         {
             return Parse(new Lexer(expression));
         }
@@ -384,23 +275,18 @@ namespace Eval
 
     public static class Evaluator
     {
-        public static double Evaluate(Expression expr)
+        public static double Evaluate(object expr)
         {
             return expr switch
             {
-                Symbol symbol =>
-                    double.TryParse(symbol.Value, NumberStyles.Float,
+                string str =>
+                    double.TryParse(str, NumberStyles.Float,
                                     CultureInfo.InvariantCulture, out double number)
                         ? number
-                        : Variables.TryGetValue(symbol.Value, out number)
-                          || Variables.TryGetValue(symbol.Value, out number)
+                        : Variables.TryGetValue(str, out number)
+                          || Variables.TryGetValue(str, out number)
                         ? number
-                        : throw new ArgumentException($"Unknown variable '{symbol.Value}'"),
-
-                UnaryOperator unary =>
-                    UnaryOperators.TryGetValue(unary.Op, out Func<double, double>? ufunc)
-                       ? ufunc(Evaluate(unary.Operand))
-                       : throw new ArgumentException($"Unknown unary operator '{unary.Op}'"),
+                        : throw new ArgumentException($"Unknown variable '{str}'"),
 
                 BinaryOperator binary =>
                     BinaryOperators.TryGetValue(binary.Op, out Func<double, double, double>? bfunc)
@@ -409,23 +295,23 @@ namespace Eval
                         : throw new ArgumentException($"Unknown binary operator '{binary.Op}'"),
 
                 Funcall funcall =>
-                    VariadicFunctions.TryGetValue(funcall.Name, out Func<double[], double>? vfunc)
-                        ? vfunc(funcall.Args.Select(Evaluate).ToArray())
-                        : Functions.TryGetValue(funcall.Name, out Delegate? func)
-                        ? func switch
-                        {
-                            Func<double, double> func1 =>
-                                func1(Evaluate(funcall.Args[0])),
-                            Func<double, double, double> func2 =>
-                                func2(Evaluate(funcall.Args[0]),
-                                      Evaluate(funcall.Args[1])),
-                            Func<double, double, double, double> func3 =>
-                                func3(Evaluate(funcall.Args[0]),
-                                      Evaluate(funcall.Args[1]),
-                                      Evaluate(funcall.Args[2])),
-                            _ => throw new InvalidOperationException($"Function '{funcall.Name}' expects {func.Method.GetParameters().Length} but received {funcall.Args.Count}"),
-                        }
-                        : throw new ArgumentException($"Unknown function '{funcall.Name}'"),
+                    Functions.TryGetValue(funcall.Name, out Delegate? func)
+                    ? func switch
+                    {
+                        Func<double, double> func1 =>
+                            func1(Evaluate(funcall.Args[0])),
+                        Func<double, double, double> func2 =>
+                            func2(Evaluate(funcall.Args[0]),
+                                  Evaluate(funcall.Args[1])),
+                        Func<double, double, double, double> func3 =>
+                            func3(Evaluate(funcall.Args[0]),
+                                  Evaluate(funcall.Args[1]),
+                                  Evaluate(funcall.Args[2])),
+                        Func<double[], double> vfunc =>
+                            vfunc(funcall.Args.Select(Evaluate).ToArray()),
+                        _ => throw new InvalidOperationException($"Function '{funcall.Name}' expects {func.Method.GetParameters().Length} but received {funcall.Args.Count}"),
+                    }
+                : throw new InvalidOperationException($"Unknown function '{funcall.Name}'"),
 
                 _ => throw new ArgumentException($"Unknown expression type '{expr.GetType()}'"),
             };

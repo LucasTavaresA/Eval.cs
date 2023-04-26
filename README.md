@@ -1,7 +1,5 @@
 # Eval.cs
 
-**Work in progress**
-
 Mathematical expressions evaluator that supports `Math.*` and `IEnumerable.*()`, using only `System.*`,
 from the lexer to the parser with no bizarre regex.
 

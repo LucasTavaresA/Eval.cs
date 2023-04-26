@@ -7,7 +7,7 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
 		<PackageId>Eval.cs</PackageId>
-		<Version>0.0.2</Version>
+		<Version>0.1.0</Version>
 		<Authors>LucasTavaresA</Authors>
 		<Copyright>MIT</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
