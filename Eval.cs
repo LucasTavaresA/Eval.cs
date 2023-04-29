@@ -175,7 +175,6 @@ namespace Eval
             {
                 if (token == "-")
                 {
-                    // in case of a minus in front of a number
                     return $"{token}{lexer.Next()}";
                 }
                 else if (token == "(")
@@ -273,9 +272,15 @@ namespace Eval
         }
     }
 
-#nullable enable
     public static class Evaluator
     {
+        private static string RemovePrefix(string str)
+        {
+            // false advertising ;-;
+            // for csharp functions support
+            return System.Text.RegularExpressions.Regex.Replace(str, "^(Math|IEnumerable)\\.", "");
+        }
+
         public static double Evaluate(object expr)
         {
             return expr switch
@@ -284,11 +289,11 @@ namespace Eval
                     double.TryParse(str, NumberStyles.Float,
                                     CultureInfo.InvariantCulture, out double number)
                         ? number
-                        : Variables.TryGetValue(str, out number)
-                          || Variables.TryGetValue(str, out number)
+                        : Variables.TryGetValue(RemovePrefix(str), out number)
                         ? number
                         : throw new ArgumentException($"Unknown variable '{str}'"),
 
+#nullable enable
                 BinaryOperator binary =>
                     BinaryOperators.TryGetValue(binary.Op, out Func<double, double, double>? bfunc)
                         ? bfunc(Evaluate(binary.Left),
@@ -296,28 +301,28 @@ namespace Eval
                         : throw new ArgumentException($"Unknown binary operator '{binary.Op}'"),
 
                 Funcall funcall =>
-                    Functions.TryGetValue(funcall.Name, out Delegate? func)
-                    ? func switch
-                    {
-                        Func<double, double> func1 =>
-                            func1(Evaluate(funcall.Args[0])),
-                        Func<double, double, double> func2 =>
-                            func2(Evaluate(funcall.Args[0]),
-                                  Evaluate(funcall.Args[1])),
-                        Func<double, double, double, double> func3 =>
-                            func3(Evaluate(funcall.Args[0]),
-                                  Evaluate(funcall.Args[1]),
-                                  Evaluate(funcall.Args[2])),
-                        Func<double[], double> vfunc =>
-                            vfunc(funcall.Args.Select(Evaluate).ToArray()),
-                        _ => throw new InvalidOperationException($"Function '{funcall.Name}' expects {func.Method.GetParameters().Length} but received {funcall.Args.Count}"),
-                    }
-                : throw new InvalidOperationException($"Unknown function '{funcall.Name}'"),
+                    Functions.TryGetValue(RemovePrefix(funcall.Name), out Delegate? func)
+                        ? func switch
+                        {
+                            Func<double, double> func1 =>
+                                func1(Evaluate(funcall.Args[0])),
+                            Func<double, double, double> func2 =>
+                                func2(Evaluate(funcall.Args[0]),
+                                      Evaluate(funcall.Args[1])),
+                            Func<double, double, double, double> func3 =>
+                                func3(Evaluate(funcall.Args[0]),
+                                      Evaluate(funcall.Args[1]),
+                                      Evaluate(funcall.Args[2])),
+                            Func<double[], double> vfunc =>
+                                vfunc(funcall.Args.Select(Evaluate).ToArray()),
+                            _ => throw new InvalidOperationException($"Function '{funcall.Name}' expects {func.Method.GetParameters().Length} but received {funcall.Args.Count}"),
+                        }
+                    : throw new InvalidOperationException($"Unknown function '{funcall.Name}'"),
+#nullable disable
 
                 _ => throw new ArgumentException($"Unknown expression type '{expr.GetType()}'"),
             };
         }
-#nullable disable
 
         public static double Evaluate(string expr)
         {
