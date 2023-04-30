@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using static Eval.Expression;
 using static Eval.Runtime;
 using static Eval.Parser;
@@ -242,7 +243,7 @@ namespace Eval
 
         public static object Parse(Lexer lexer, int precedence = 0)
         {
-            if (precedence >= 2)
+            if (precedence >= 3)
             {
                 return ParsePrimary(lexer);
             }
@@ -276,9 +277,7 @@ namespace Eval
     {
         private static string RemovePrefix(string str)
         {
-            // false advertising ;-;
-            // for csharp functions support
-            return System.Text.RegularExpressions.Regex.Replace(str, "^(Math|IEnumerable)\\.", "");
+            return Regex.Replace(str, "^(Math|IEnumerable)\\.", "");
         }
 
         public static double Evaluate(object expr)

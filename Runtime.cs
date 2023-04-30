@@ -74,10 +74,10 @@ namespace Eval
         public static Dictionary<string, int> Precedence { get; } = new()
         {
             { "+", 0 },
-            { "-", 0 },
-            { "*", 1 },
-            { "/", 1 },
-            { "%", 1 },
+            { "-", 1 }, // minus is not really a binary operator so it need to be evaluated first
+            { "*", 2 },
+            { "/", 2 },
+            { "%", 2 },
         };
     }
 }
