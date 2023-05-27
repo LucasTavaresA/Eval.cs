@@ -10,15 +10,15 @@
 		<Version>0.2.0</Version>
 		<Authors>LucasTavaresA</Authors>
 		<Copyright>LGPL</Copyright>
-		<PackageReadmeFile>../README.md</PackageReadmeFile>
-		<PackageLicenseFile>../LICENSE.md</PackageLicenseFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<Description>Mathematical expressions evaluator that supports math functions and enumerators, using only `System`.</Description>
 		<RepositoryUrl>https://github.com/lucastavaresa/eval.cs</RepositoryUrl>
 		<PackageTags>evaluator;eval;math;expressions;calculate</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="../README.md" Pack="true" PackagePath="../"/>
-		<None Include="../LICENSE.md" Pack="true" PackagePath="../"/>
+		<None Include="..\README.md" Pack="true" PackagePath=""/>
+		<None Include="..\LICENSE.md" Pack="true" PackagePath="" />
 	</ItemGroup>
 </Project>
