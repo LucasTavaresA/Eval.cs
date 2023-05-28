@@ -7,7 +7,7 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
 		<PackageId>Eval.cs</PackageId>
-		<Version>0.2.0</Version>
+		<Version>0.2.1</Version>
 		<Authors>LucasTavaresA</Authors>
 		<Copyright>LGPL</Copyright>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

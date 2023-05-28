@@ -330,13 +330,13 @@ namespace Eval
                                     operands.Push(vfunc(args));
                                     break;
                                 default:
-                                    throw new NotSupportedException(
+                                    throw new UnreachableException(
                                         $"Unknown type of function '{expr[i].GetType()}'"
                                     );
                             }
                             break;
                         default:
-                            throw new NotSupportedException($"Unknown expression '{expr[i]}'");
+                            throw new UnreachableException($"Unknown expression '{expr[i]}'");
                     }
                 }
                 catch (ArgumentAmountException e)
