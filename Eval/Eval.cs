@@ -367,7 +367,9 @@ namespace Eval
                 }
             }
 
-            return operands.Pop();
+            return operands.TryPop(out double result)
+                ? result
+                : throw new InvalidOperationException($"Can't evaluate empty expression");
         }
 
         public static double Evaluate(string expr)

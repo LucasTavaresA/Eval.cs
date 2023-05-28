@@ -135,6 +135,7 @@ TestExceptions("'#' is not a invalid character!", "(1 - Math#Pow(1, (1 + 2)))");
 TestExceptions("More arguments than supported!", "Math.Pow(8, 4, -2, 5, 4)");
 TestExceptions("Variadic received 0 arguments!", "last()");
 TestExceptions("Less arguments than supported!", "Math.Pow(8)");
+TestExceptions("Evaluating empty string ", "");
 
 Separator("[GENERATED]");
 Separator();
