@@ -24,7 +24,7 @@ Console.WriteLine(Evaluator.Evaluate("IEnumerable.Average(2, 3, 5)"));
 Console.WriteLine(Evaluator.Evaluate("pow(-average(2, 3, 5), -5)"));
 Console.WriteLine(Evaluator.Evaluate("19e-11 /- 12");
 Console.WriteLine(Evaluator.Evaluate("last(4, last(1, 2), 5)");
-Console.WriteLine(Evaluator.Evaluate("921.315D * -20.93D % 34.567D");
+Console.WriteLine(Evaluator.Evaluate("921.315 * -20.93 % 34.567");
 Console.WriteLine(Evaluator.Evaluate(" 9>>3  /+ 1.2");
 ```
 

@@ -77,11 +77,6 @@ namespace Eval
 
     public struct Parser
     {
-        private static string CleanNumber(string number)
-        {
-            return number.TrimEnd('d', 'D');
-        }
-
         private static string CleanSymbol(string symbol)
         {
             return (
@@ -131,7 +126,7 @@ namespace Eval
             {
                 if (
                     double.TryParse(
-                        CleanNumber(token),
+                        token,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
                         out double number
