@@ -10,6 +10,7 @@ namespace Eval
     public struct Lexer
     {
         private string Src { get; set; }
+        public int Index { get; set; } = 0;
 
         public Lexer(string src)
         {
@@ -17,61 +18,54 @@ namespace Eval
         }
 
         /// <summary>
-        /// Get the next token and remove it from src
+        /// Get the next token and move to the next index
         /// </summary>
         public string Pop()
         {
-            string token = Peek();
-            Drop(token.Length);
+            int nextIndex = Peek();
+            string token = Src[Index..nextIndex].TrimStart();
+            Index = nextIndex;
             return token;
         }
 
         /// <summary>
-        /// Removes an amount of chars from source
+        /// Get the next token index
         /// </summary>
-        public void Drop(int amount)
+        public int Peek()
         {
-            Src = Src.TrimStart();
-            Src = amount < Src.Length ? Src[amount..] : "";
-        }
-
-        /// <summary>
-        /// Get the next token
-        /// </summary>
-        public string Peek()
-        {
-            string src = Src.TrimStart();
+            int index = Index + Src[Index..].TakeWhile(c => c == ' ').Count();
+            string src = Src[index..];
 
             if (src == "")
             {
-                return "";
+                return Src.Length;
             }
 
-            int index =
+            int tokenIndex =
                 Tokens
                     .FirstOrDefault((t) => src.StartsWith(t, StringComparison.OrdinalIgnoreCase))
                     ?.Length ?? src.TakeWhile((c) => char.IsLetterOrDigit(c) || c == '.').Count();
 
-            if (index < 1)
+            if (tokenIndex < 1)
             {
                 throw new InvalidOperationException($"Invalid Character: '{src[0]}'");
             }
 
-            string token = src[..Math.Max(1, index)];
+            src = src[..tokenIndex];
+            index += tokenIndex;
 
             // Handle scientific notation
             if (
-                token.EndsWith("E", StringComparison.OrdinalIgnoreCase)
-                && token.Length > 1
-                && index + 1 < src.Length
-                && AdditiveOperators.ContainsKey(src[index].ToString())
+                src.EndsWith("E", StringComparison.OrdinalIgnoreCase)
+                && src.Length > 1
+                && index + 1 < Src.Length
+                && AdditiveOperators.ContainsKey(Src[index].ToString())
             )
             {
-                index = src[(token.Length + 1)..].TakeWhile(char.IsDigit).Count();
-                return src[..(index + token.Length + 1)];
+                index += Src[(index + 1)..].TakeWhile(char.IsDigit).Count() + 1;
             }
 
-            return token;
+            return index;
         }
     }
 
