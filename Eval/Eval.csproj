@@ -1,24 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFrameworks>net7.0</TargetFrameworks>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>disable</Nullable>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-		<PackageId>Eval.cs</PackageId>
-		<Version>0.2.1</Version>
-		<Authors>LucasTavaresA</Authors>
-		<Copyright>LGPL</Copyright>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<Description>Mathematical expressions evaluator that supports math functions and enumerators, using only `System`.</Description>
-		<RepositoryUrl>https://github.com/lucastavaresa/eval.cs</RepositoryUrl>
-		<PackageTags>evaluator;eval;math;expressions;calculate</PackageTags>
-	</PropertyGroup>
+    <PackageId>Eval.cs</PackageId>
+    <Version>0.2.1</Version>
+    <Authors>LucasTavaresA</Authors>
+    <Copyright>LGPL</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <Description>Mathematical expressions evaluator that supports math functions and enumerators, using only `System`.</Description>
+    <RepositoryUrl>https://github.com/lucastavaresa/eval.cs</RepositoryUrl>
+    <PackageTags>evaluator;eval;math;expressions;calculate</PackageTags>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md" Pack="true" PackagePath=""/>
-		<None Include="..\LICENSE.md" Pack="true" PackagePath="" />
-	</ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath=""/>
+    <None Include="..\LICENSE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 </Project>

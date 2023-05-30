@@ -1,20 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<ItemGroup>
-		<ProjectReference Include="..\Eval\Eval.csproj" />
-	</ItemGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
 
-	<PropertyGroup>
-		<OutputType>Exe</OutputType>
-		<TargetFramework>net7.0</TargetFramework>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>disable</Nullable>
-	</PropertyGroup>
+    <Authors>LucasTavaresA</Authors>
+    <Copyright>LGPL</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <Description>Basic mathematical expressions generator, does not generate parens and functions.</Description>
+    <RepositoryUrl>https://github.com/lucastavaresa/eval.cs</RepositoryUrl>
+    <PackageTags>generate;generator;fuzzer;test;math;expressions</PackageTags>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md" Pack="true" PackagePath=""/>
-		<None Include="..\LICENSE.md" Pack="true" PackagePath="" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Eval\Eval.csproj" />
+    <None Include="..\README.md" Pack="true" PackagePath=""/>
+    <None Include="..\LICENSE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
 </Project>

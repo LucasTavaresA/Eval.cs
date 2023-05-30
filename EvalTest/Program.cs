@@ -1,3 +1,6 @@
+﻿// Licensed under the LGPL3 license.
+// See the LICENSE file in the project root for more information.
+
 using System;
 using System.Linq;
 using Eval;
@@ -18,8 +21,8 @@ void Separator(string header = "")
 string GetTokens(string expr)
 {
     Lexer lexer = new(expr);
-    string tokens = "" + lexer.Pop();
-    string next = lexer.Pop();
+    var tokens = "" + lexer.Pop();
+    var next = lexer.Pop();
 
     while (next != "")
     {
