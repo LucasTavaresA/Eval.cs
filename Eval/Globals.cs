@@ -7,19 +7,19 @@ using System.Linq;
 
 namespace Eval;
 
-public struct KeyLengthComparer : IComparer<string>
-{
-    public int Compare(string x, string y)
-    {
-        var lengthComparison = y.Length.CompareTo(x.Length);
-        return lengthComparison == 0
-            ? string.Compare(y, x, StringComparison.Ordinal)
-            : lengthComparison;
-    }
-}
-
 public struct Globals
 {
+    private struct KeyLengthComparer : IComparer<string>
+    {
+        public int Compare(string x, string y)
+        {
+            var lengthComparison = y.Length.CompareTo(x.Length);
+            return lengthComparison == 0
+                ? string.Compare(y, x, StringComparison.Ordinal)
+                : lengthComparison;
+        }
+    }
+
     // csharpier-ignore-start
     public static readonly Dictionary<string, Funcall> Functions =
         new()
