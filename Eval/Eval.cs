@@ -17,7 +17,12 @@ public struct Lexer
 
     public Lexer(string src)
     {
-        Src = src;
+        if (src == "")
+        {
+            throw new InvalidOperationException($"Expression cannot be empty");
+        }
+
+        Src = src ?? throw new InvalidOperationException($"Expression cannot be null");
     }
 
     /// <summary>
@@ -359,7 +364,9 @@ public struct Evaluator
 
         return operands.TryPop(out var result)
             ? result
-            : throw new InvalidOperationException($"Can't evaluate empty expression");
+            : throw new UnexpectedEvaluationException(
+                $"Lack of operands when returning evaluation result"
+            );
     }
 
     public static double Evaluate(string expr)
