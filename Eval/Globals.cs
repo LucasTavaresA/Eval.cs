@@ -118,47 +118,17 @@ public struct Globals
     /// </summary>
     public static readonly string[] Tokens = BinaryOperators.Keys.Concat(FlowTokens).ToArray();
 
-    public struct BinaryOperator
-    {
-        public int Precedence { get; set; }
-        public string Op { get; set; }
-        public Func<double, double, double> Operation { get; set; }
+    public record struct BinaryOperator(int Precedence, string Op, Func<double, double, double> Operation);
 
-        public BinaryOperator(int precedence, string op, Func<double, double, double> operation)
-        {
-            Precedence = precedence;
-            Op = op;
-            Operation = operation;
-        }
-
-        public override string ToString()
-        {
-            return Op;
-        }
-    }
-
-    public struct AdditiveOperator
-    {
-        public string Op { get; set; }
-        public Func<double, double> Operation { get; set; }
-
-        public AdditiveOperator(string op, Func<double, double> operation)
-        {
-            Op = op;
-            Operation = operation;
-        }
-
-        public override string ToString()
-        {
-            return Op;
-        }
-    }
+    public record struct AdditiveOperator(string Op, Func<double, double> Operation);
 
     public struct Funcall
     {
         public string Name { get; set; }
         public Delegate Func { get; set; }
         public int ArgAmount { get; set; }
+        public int Offset { get; set; }
+        public int Length { get; set; }
 
         public Funcall(string name, int argAmount, Delegate func)
         {

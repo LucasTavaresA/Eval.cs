@@ -33,6 +33,31 @@ string GetTokens(string expr)
     return tokens;
 }
 
+static string Error(string message, string src, int offset, int length)
+{
+    if (length < 1)
+    {
+        return $"{message}";
+    }
+
+    var marker = new string(' ', offset);
+
+    if (length == 1)
+    {
+        marker += "^";
+    }
+    else if (length == 2)
+    {
+        marker += "^^";
+    }
+    else if (length > 2)
+    {
+        marker += $"^{new('~', length - 2)}^";
+    }
+
+    return $"{message}\n{src}\n{marker}";
+}
+
 void TestExceptions(string expectedException, string expression)
 {
     Console.WriteLine($"ExpectedException: {expectedException}");
@@ -40,23 +65,20 @@ void TestExceptions(string expectedException, string expression)
     try
     {
         Console.WriteLine($"Lexicons: {GetTokens(expression)}");
+        result = Evaluator.Evaluate(expression);
     }
     catch (Exception e)
     {
-        Console.WriteLine(e);
-        return;
-    }
-    finally
-    {
-        try
-        {
-            result = Evaluator.Evaluate(expression);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            Separator();
-        }
+        Console.WriteLine(
+            e switch
+            {
+                InvalidExpressionException ie => Error(ie.Message, ie.Src, ie.Offset, ie.Length),
+                ArgumentAmountException ae => Error(ae.Message, ae.Src, ae.Offset, ae.Length),
+                _ => e.Message
+            }
+        );
+
+        Separator();
     }
 }
 
@@ -134,11 +156,12 @@ TestExceptions("Opened paren is not closed!", "(1 - Math.Pow(2, (1 + 2) * 3) * 3
 TestExceptions("Not closing early opened function!", "1 - Math.Pow(2, (1 + 2) * 3 * 3");
 TestExceptions("scientific notation cannot have space", "2e +10");
 TestExceptions("'$' is not a invalid character!", "(1 - Math.Pow($, (1 + 2)))");
-TestExceptions("'#' is not a invalid character!", "(1 - Math#Pow(1, (1 + 2)))");
 TestExceptions("More arguments than supported!", "Math.Pow(8, 4, -2, 5, 4)");
-TestExceptions("Variadic received 0 arguments!", "last()");
+TestExceptions("Empty parens!", "last()");
+TestExceptions("Empty parens!", "4 /+ 2 * last() + 3");
 TestExceptions("Less arguments than supported!", "Math.Pow(8)");
 TestExceptions("Evaluating empty string ", "");
+TestExceptions("Evaluating null string ", null);
 
 Separator("[GENERATED]");
 Separator();

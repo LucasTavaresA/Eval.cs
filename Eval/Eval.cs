@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using static Eval.Globals;
@@ -56,7 +55,7 @@ public struct Lexer
 
         if (tokenIndex < 1)
         {
-            throw new InvalidOperationException($"Invalid Character: '{src[0]}'");
+            throw new InvalidExpressionException($"Invalid character '{src[0]}'", Src, index, 1);
         }
 
         src = src[..tokenIndex];
@@ -90,25 +89,7 @@ internal struct Parser
         ).ToLowerInvariant();
     }
 
-    private static void SetArgs(ref Funcall f, int received)
-    {
-        if (f.ArgAmount == 0)
-        {
-            f.ArgAmount = received;
-        }
-        else if (f.ArgAmount > received)
-        {
-            throw new ArgumentException(
-                    $"Lacking arguments: {f.Name}() expects {f.ArgAmount} arguments but received {received}"
-                    );
-        }
-        else if (f.ArgAmount < received)
-        {
-            throw new ArgumentException(
-                    $"Too many arguments: {f.Name}() expects {f.ArgAmount} arguments but received {received}"
-                    );
-        }
-    }
+    private record struct Paren(string Kind, int Pos);
 
     internal static List<object> Parse(ref Lexer lexer)
     {
@@ -138,10 +119,11 @@ internal struct Parser
                 output.Add(number);
                 token = lexer.Pop();
             }
-            else if (Functions.TryGetValue(CleanSymbol(token), out var func))
+            else if (Functions.TryGetValue(CleanSymbol(token), out var funcall))
             {
                 args.Push(1);
-                operators.Push(func);
+                funcall.Offset = lexer.Index - token.Length;
+                operators.Push(funcall);
                 token = lexer.Pop();
             }
             else if (BinaryOperators.TryGetValue(token, out var cbop))
@@ -149,7 +131,7 @@ internal struct Parser
                 while (
                     operators.Count > 0
                     && (
-                        operators.Peek() is AdditiveOperator or Funcall
+                        operators.Peek() is AdditiveOperator
                         || (
                             operators.Peek() is BinaryOperator bop
                             && cbop.Precedence <= bop.Precedence
@@ -157,16 +139,7 @@ internal struct Parser
                     )
                 )
                 {
-                    if (operators.Peek() is Funcall f)
-                    {
-                        SetArgs(ref f, args.Pop());
-                        output.Add(f);
-                        _ = operators.Pop();
-                    }
-                    else
-                    {
-                        output.Add(operators.Pop());
-                    }
+                    output.Add(operators.Pop());
                 }
 
                 operators.Push(cbop);
@@ -174,6 +147,7 @@ internal struct Parser
                 token = lexer.Pop();
 
                 // additive operator in front of a binary operator
+                // TODO(LucasTA): Remove since its useless when lexer produce tokens
                 if (AdditiveOperators.TryGetValue(token, out additive))
                 {
                     operators.Push(additive);
@@ -182,8 +156,10 @@ internal struct Parser
             }
             else if (token == "(")
             {
-                operators.Push(token);
-
+                // HACK(LucasTA): Remove this
+                //   used only to check if inside parens later
+                //   also stores its position for errors
+                operators.Push(new Paren(token, lexer.Index));
                 token = lexer.Pop();
 
                 // expression inside parens starts with additive
@@ -192,21 +168,22 @@ internal struct Parser
                     operators.Push(additive);
                     token = lexer.Pop();
                 }
+
+                if (token == ")")
+                {
+                    throw new InvalidExpressionException(
+                        "Empty parens",
+                        lexer.Src,
+                        lexer.Index - 2,
+                        2
+                    );
+                }
             }
             else if (token is ")" or ",")
             {
-                while (operators.Count > 0 && operators.Peek().ToString() != "(")
+                while (operators.Count > 0 && operators.Peek() is not Paren)
                 {
-                    if (operators.Peek() is Funcall f)
-                    {
-                        SetArgs(ref f, args.Pop());
-                        output.Add(f);
-                        _ = operators.Pop();
-                    }
-                    else
-                    {
-                        output.Add(operators.Pop());
-                    }
+                    output.Add(operators.Pop());
                 }
 
                 if (token == ",")
@@ -225,47 +202,72 @@ internal struct Parser
                 else if (token == ")")
                 {
                     // discard (
-                    _ =
-                        operators.Count == 0
-                        ? throw new InvalidOperationException("Closing unexsistent paren")
-                        : operators.Pop();
+                    if (!operators.TryPop(out _))
+                    {
+                        throw new InvalidExpressionException(
+                            "Closing unexsistent paren",
+                            lexer.Src,
+                            lexer.Index - 1,
+                            1
+                        );
+                    }
+
+                    if (operators.TryPeek(out var op) && op is Funcall function)
+                    {
+                        _ = operators.Pop();
+                        var received = args.Pop();
+
+                        if (function.ArgAmount == 0)
+                        {
+                            function.ArgAmount = received;
+                        }
+                        else if (function.ArgAmount != received)
+                        {
+                            throw new ArgumentAmountException(
+                                lexer.Src,
+                                function.Name,
+                                function.ArgAmount,
+                                received,
+                                function.Offset,
+                                lexer.Index
+                            );
+                        }
+
+                        output.Add(function);
+                    }
+
                     token = lexer.Pop();
                 }
             }
             else
             {
-                throw new InvalidOperationException($"Invalid variable or function: '{token}'");
+                throw new InvalidExpressionException(
+                    $"Invalid variable or function: '{token}'",
+                    lexer.Src,
+                    lexer.Index - token.Length,
+                    token.Length
+                );
             }
         }
 
-        foreach (var o in operators)
+        foreach (var op in operators)
         {
-            if (o is "(")
+            if (op is Paren paren)
             {
-                throw new InvalidOperationException("Opened paren is not closed");
-            }
-            else if (o is Funcall f)
-            {
-                SetArgs(ref f, args.Pop());
-                output.Add(f);
+                throw new InvalidExpressionException(
+                    "Opened paren is not closed",
+                    lexer.Src,
+                    paren.Pos - 1,
+                    1
+                );
             }
             else
             {
-                output.Add(o);
+                output.Add(op);
             }
         }
 
         return output;
-    }
-}
-
-internal class ArgumentAmountException : ArgumentException
-{
-    internal int Received { get; }
-
-    internal ArgumentAmountException(int received)
-    {
-        Received = received;
     }
 }
 
@@ -277,7 +279,9 @@ public struct Evaluator
 
         for (var i = 0; i < argAmount; i++)
         {
-            outArgs[i] = args.TryPop(out var arg) ? arg : throw new ArgumentAmountException(i);
+            outArgs[i] = args.TryPop(out var arg)
+                ? arg
+                : throw new UnexpectedEvaluationException($"Lack of operands");
         }
 
         return outArgs;
@@ -290,75 +294,46 @@ public struct Evaluator
 
         for (var i = 0; i < expr.Count; i++)
         {
-            try
+            switch (expr[i])
             {
-                switch (expr[i])
-                {
-                    case double number:
-                        operands.Push(number);
-                        break;
-                    case AdditiveOperator additive:
-                        args = PopArgs(operands, 1);
-                        operands.Push(additive.Operation(args[0]));
-                        break;
-                    case BinaryOperator bop:
-                        args = PopArgs(operands, 2);
-                        operands.Push(bop.Operation(args[1], args[0]));
-                        break;
-                    case Funcall func:
-                        switch (func.Func)
-                        {
-                            case Func<double, double> func1:
-                                args = PopArgs(operands, 1);
-                                operands.Push(func1(args[0]));
-                                break;
-                            case Func<double, double, double> func2:
-                                args = PopArgs(operands, 2);
-                                operands.Push(func2(args[1], args[0]));
-                                break;
-                            case Func<double, double, double, double> func3:
-                                args = PopArgs(operands, 3);
-                                operands.Push(func3(args[2], args[1], args[0]));
-                                break;
-                            case Func<double[], double> vfunc:
-                                args = PopArgs(operands, func.ArgAmount).Reverse().ToArray();
-                                operands.Push(vfunc(args));
-                                break;
-                            default:
-                                throw new UnreachableException(
-                                    $"Unknown type of function '{expr[i].GetType()}'"
-                                );
-                        }
-                        break;
-                    default:
-                        throw new UnreachableException($"Unknown expression '{expr[i]}'");
-                }
-            }
-            catch (ArgumentAmountException e)
-            {
-                throw expr[i] switch
-                {
-                    Funcall func
-                        => new ArgumentException(
-                            $"{func.Name}() is missing arguments, expected {func.ArgAmount} received {e.Received}"
-                        ),
-                    AdditiveOperator additive
-                        => new ArgumentException(
-                            $"Additive operator '{additive.Op}' is missing its operand"
-                        ),
-                    BinaryOperator bop
-                        => e.Received == 1
-                            ? new ArgumentException(
-                                $"binary operator '{bop.Op}' is missing a right operand"
-                            )
-                            : new ArgumentException(
-                                $"binary operator '{bop.Op}' is missing operands"
-                            ),
-                    _
-                        => new UnreachableException(
-                            $"Unknow expression '{e.GetType()}' is missing operands"
-                        ),
-                };
+                case double number:
+                    operands.Push(number);
+                    break;
+                case AdditiveOperator additive:
+                    args = PopArgs(operands, 1);
+                    operands.Push(additive.Operation(args[0]));
+                    break;
+                case BinaryOperator bop:
+                    args = PopArgs(operands, 2);
+                    operands.Push(bop.Operation(args[1], args[0]));
+                    break;
+                case Funcall func:
+                    switch (func.Func)
+                    {
+                        case Func<double, double> func1:
+                            args = PopArgs(operands, 1);
+                            operands.Push(func1(args[0]));
+                            break;
+                        case Func<double, double, double> func2:
+                            args = PopArgs(operands, 2);
+                            operands.Push(func2(args[1], args[0]));
+                            break;
+                        case Func<double, double, double, double> func3:
+                            args = PopArgs(operands, 3);
+                            operands.Push(func3(args[2], args[1], args[0]));
+                            break;
+                        case Func<double[], double> vfunc:
+                            args = PopArgs(operands, func.ArgAmount).Reverse().ToArray();
+                            operands.Push(vfunc(args));
+                            break;
+                        default:
+                            throw new UnexpectedEvaluationException(
+                                $"Unknown type of function '{expr[i].GetType()}'"
+                            );
+                    }
+                    break;
+                default:
+                    throw new UnexpectedEvaluationException($"Unknown expression '{expr[i]}'");
             }
         }
 
