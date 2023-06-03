@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using static Eval.Globals;
 
 namespace Eval;
@@ -29,7 +28,7 @@ public struct Lexer
     /// </summary>
     public string Pop()
     {
-        var nextIndex = Peek();
+        var nextIndex = PeekIndex();
         var token = Src[Index..nextIndex].TrimStart();
         Index = nextIndex;
         return token;
@@ -38,28 +37,70 @@ public struct Lexer
     /// <summary>
     /// Get the next token index
     /// </summary>
-    public int Peek()
+    public int PeekIndex()
     {
-        var index = Index + Src[Index..].TakeWhile(c => c == ' ').Count();
-        var src = Src[index..];
+        var spaceIndex = Index;
+
+        if (spaceIndex < Src.Length)
+        {
+            while (Src[spaceIndex] == ' ')
+            {
+                spaceIndex++;
+            }
+        }
+
+        var src = Src[spaceIndex..];
 
         if (src == "")
         {
             return Src.Length;
         }
 
-        var tokenIndex =
-            Tokens
-                .FirstOrDefault((t) => src.StartsWith(t, StringComparison.OrdinalIgnoreCase))
-                ?.Length ?? src.TakeWhile((c) => char.IsLetterOrDigit(c) || c == '.').Count();
+        var index = -1;
 
-        if (tokenIndex < 1)
+        foreach (var token in Tokens)
         {
-            throw new InvalidExpressionException($"Invalid character '{src[0]}'", Src, index, 1);
+            if (src.StartsWith(token, StringComparison.OrdinalIgnoreCase))
+            {
+                index = token.Length;
+                break;
+            }
         }
 
-        src = src[..tokenIndex];
-        index += tokenIndex;
+        if (index == -1)
+        {
+            var count = 0;
+
+            foreach (var c in src)
+            {
+                if (char.IsLetterOrDigit(c) || c == '.')
+                {
+                    count++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (count > 0)
+            {
+                index = count;
+            }
+        }
+
+        if (index == -1)
+        {
+            throw new InvalidExpressionException(
+                $"Invalid character '{src[0]}'",
+                Src,
+                spaceIndex,
+                1
+            );
+        }
+
+        src = src[..index];
+        index += spaceIndex;
 
         // Handle scientific notation
         if (
@@ -69,7 +110,12 @@ public struct Lexer
             && AdditiveOperators.ContainsKey(Src[index].ToString())
         )
         {
-            index += Src[(index + 1)..].TakeWhile(char.IsDigit).Count() + 1;
+            index++;
+
+            while (index < Src.Length && char.IsDigit(Src[index]))
+            {
+                index++;
+            }
         }
 
         return index;
@@ -323,7 +369,8 @@ public struct Evaluator
                             operands.Push(func3(args[2], args[1], args[0]));
                             break;
                         case Func<double[], double> vfunc:
-                            args = PopArgs(operands, func.ArgAmount).Reverse().ToArray();
+                            args = PopArgs(operands, func.ArgAmount);
+                            Array.Reverse(args);
                             operands.Push(vfunc(args));
                             break;
                         default:
