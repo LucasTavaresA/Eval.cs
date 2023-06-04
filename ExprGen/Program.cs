@@ -2,7 +2,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Linq;
 using Eval;
 using static Eval.Globals;
 
@@ -25,10 +24,8 @@ public struct Generators
 {
     private record NOutOf(int N, int OutOf);
 
-    private static readonly NOutOf AdditiveChance = new(3, 10);
+    private static readonly NOutOf NegativeChance = new(3, 10);
     private static readonly Random Random = new();
-    private static readonly string[] Operators = BinaryOperators.Keys.ToArray();
-    private static readonly string[] Additives = AdditiveOperators.Keys.ToArray();
     private static readonly (int Min, int Max) ExprLength = (2, 4);
     private static readonly (int Min, int Max) SpaceLength = (0, 2);
     private static readonly (int Integer, int Decimal) NumberLength = (1, 1);
@@ -41,13 +38,13 @@ public struct Generators
     private static string SpaceOut(string expr)
     {
         Lexer lexer = new(expr);
-        var tokens = Space() + lexer.Pop();
-        var next = lexer.Pop();
+        var tokens = Space() + lexer.NextToken();
+        var next = lexer.NextToken();
 
-        while (next != "")
+        while (next.Kind != TokenKind.End)
         {
             tokens += Space() + next;
-            next = lexer.Pop();
+            next = lexer.NextToken();
         }
 
         return tokens;
@@ -66,19 +63,19 @@ public struct Generators
         );
     }
 
-    private static string AdditiveOperator()
+    private static string Negative()
     {
-        return Chance(AdditiveChance) ? Additives[Random.Next(Additives.Length)] : "";
+        return Chance(NegativeChance) ? "-" : "";
     }
 
     private static string Operator()
     {
-        return Operators[Random.Next(Operators.Length)];
+        return BinaryOperatorsKeys[Random.Next(BinaryOperatorsKeys.Length)];
     }
 
     internal static string Expression()
     {
-        var expression = AdditiveOperator() + Number();
+        var expression = Negative() + Number();
 
         for (var i = ExprLength.Min; i < Random.Next(ExprLength.Min, ExprLength.Max + 1); i++)
         {

@@ -9,40 +9,118 @@ namespace Eval;
 
 public struct Globals
 {
-    private struct KeyLengthComparer : IComparer<string>
+    public enum TokenKind
     {
-        public int Compare(string x, string y)
+        // operators
+        Plus,
+        Minus,
+        Multiply,
+        Divide,
+        Modulo,
+        Exponent,
+        ShiftLeft,
+        ShiftRight,
+
+        // numbers variables and functions
+        Symbol = 8,
+
+        // control flow
+        OpenParen,
+        CloseParen,
+        Comma,
+        End,
+    }
+
+    public record struct Token(TokenKind Kind, string Literal)
+    {
+        public override string ToString() => Literal;
+    };
+
+    public record struct BinaryOperator(
+        int Precedence,
+        string Op,
+        Func<double, double, double> Operation
+    );
+
+    public static readonly Delegate Negative = (double val) => -val;
+
+    public struct Funcall
+    {
+        public string Name { get; set; }
+        public Delegate Func { get; set; }
+        public int ArgAmount { get; set; }
+        public int Offset { get; set; }
+        public int Length { get; set; }
+
+        public Funcall(string name, int argAmount, Delegate func)
         {
-            var lengthComparison = y.Length.CompareTo(x.Length);
-            return lengthComparison == 0
-                ? string.Compare(y, x, StringComparison.Ordinal)
-                : lengthComparison;
+            Name = name;
+            ArgAmount = argAmount;
+            Func = func;
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 
     // csharpier-ignore-start
+    public static readonly Dictionary<TokenKind, BinaryOperator> BinaryOperators =
+        new()
+        {
+            { TokenKind.Plus,  new(1, "+",  (double left, double right) => left + right) },
+            { TokenKind.Minus,  new(1, "-",  (double left, double right) => left - right) },
+            { TokenKind.Multiply,  new(2, "*",  (double left, double right) => left * right) },
+            { TokenKind.Divide,  new(2, "/",  (double left, double right) => left / right) },
+            { TokenKind.Modulo,  new(2, "%",  (double left, double right) => left % right) },
+            { TokenKind.Exponent,  new(3, "^",  Math.Pow) },
+            { TokenKind.ShiftLeft, new(0, "<<", (double left, double right) => (int)left << (int)right) },
+            { TokenKind.ShiftRight, new(0, ">>", (double left, double right) => (int)left >> (int)right) },
+        };
+
+    public static readonly string[] BinaryOperatorsKeys =
+        {
+            "+",
+            "-",
+            "*",
+            "/",
+            "%",
+            "^",
+            "<<",
+            ">>",
+        };
+
+    public static readonly Dictionary<string, double> Variables =
+        new()
+        {
+            { "pi",  Math.PI },
+            { "e",   Math.E },
+            { "tau", Math.Tau },
+        };
+
     public static readonly Dictionary<string, Funcall> Functions =
         new()
         {
-            { "average",          new("average",          0, (Func<double[], double>)((args) => args.Average())) },
-            { "max",              new("max",              0, (Func<double[], double>)((args) => args.Max())) },
-            { "min",              new("min",              0, (Func<double[], double>)((args) => args.Min())) },
-            { "sum",              new("sum",              0, (Func<double[], double>)((args) => args.Sum())) },
-            { "last",             new("last",             0, (Func<double[], double>)((args) => args.Last())) },
-            { "length",           new("length",           0, (Func<double[], double>)((args) => args.Length)) },
-            { "count",            new("count",            0, (Func<double[], double>)((args) => args.Length)) },
-            { "first",            new("first",            0, (Func<double[], double>)((args) => args.First())) },
-            { "single",           new("single",           0, (Func<double[], double>)((args) => args.Single())) },
-            { "gethashcode",      new("gethashcode",      0, (Func<double[], double>)((args) => args.GetHashCode())) },
-            { "singleordefault",  new("singleordefault",  0, (Func<double[], double>)((args) => args.SingleOrDefault())) },
-            { "firstordefault",   new("firstordefault",   0, (Func<double[], double>)((args) => args.FirstOrDefault())) },
-            { "lastordefault",    new("lastordefault",    0, (Func<double[], double>)((args) => args.LastOrDefault())) },
-            { "abs",              new("abs",              1, (Func<double, double>)Math.Abs) },
-            { "ceiling",          new("ceiling",          1, (Func<double, double>)Math.Ceiling) },
-            { "floor",            new("floor",            1, (Func<double, double>)Math.Floor) },
-            { "log",              new("log",              1, (Func<double, double>)Math.Log) },
-            { "round",            new("round",            1, (Func<double, double>)Math.Round) },
-            { "truncate",         new("truncate",         1, (Func<double, double>)Math.Truncate) },
+            { "average",          new("average",          0, (double[] args) => args.Average()) },
+            { "max",              new("max",              0, (double[] args) => args.Max()) },
+            { "min",              new("min",              0, (double[] args) => args.Min()) },
+            { "sum",              new("sum",              0, (double[] args) => args.Sum()) },
+            { "last",             new("last",             0, (double[] args) => args.Last()) },
+            { "length",           new("length",           0, (double[] args) => args.Length) },
+            { "count",            new("count",            0, (double[] args) => args.Length) },
+            { "first",            new("first",            0, (double[] args) => args.First()) },
+            { "single",           new("single",           0, (double[] args) => args.Single()) },
+            { "gethashcode",      new("gethashcode",      0, (double[] args) => args.GetHashCode()) },
+            { "singleordefault",  new("singleordefault",  0, (double[] args) => args.SingleOrDefault()) },
+            { "firstordefault",   new("firstordefault",   0, (double[] args) => args.FirstOrDefault()) },
+            { "lastordefault",    new("lastordefault",    0, (double[] args) => args.LastOrDefault()) },
+            { "abs",              new("abs",              1, (double arg) => Math.Abs(arg)) },
+            { "ceiling",          new("ceiling",          1, (double arg) => Math.Ceiling(arg)) },
+            { "floor",            new("floor",            1, (double arg) => Math.Floor(arg)) },
+            { "log",              new("log",              1, (double arg) => Math.Log(arg)) },
+            { "round",            new("round",            1, (double arg) => Math.Round(arg)) },
+            { "truncate",         new("truncate",         1, (double arg) => Math.Truncate(arg)) },
             { "acos",             new("acos",             1, Math.Acos) },
             { "acosh",            new("acosh",            1, Math.Acosh) },
             { "asin",             new("asin",             1, Math.Asin) },
@@ -70,76 +148,5 @@ public struct Globals
             { "tan",              new("tan",              1, Math.Tan) },
             { "tanh",             new("tanh",             1, Math.Tanh) },
         };
-
-    public static readonly Dictionary<string, double> Variables =
-        new()
-        {
-            { "pi",  Math.PI },
-            { "e",   Math.E },
-            { "tau", Math.Tau },
-        };
-
-    public static readonly SortedDictionary<string, BinaryOperator> BinaryOperators =
-        new(new KeyLengthComparer())
-        {
-            { "+",  new(1, "+",  (left, right) => left + right) },
-            { "-",  new(1, "-",  (left, right) => left - right) },
-            { "*",  new(2, "*",  (left, right) => left * right) },
-            { "/",  new(2, "/",  (left, right) => left / right) },
-            { "%",  new(2, "%",  (left, right) => left % right) },
-            { "^",  new(3, "^",  Math.Pow) },
-            { "+-", new(1, "+-", (left, right) => left + -right) },
-            { "-+", new(1, "-+", (left, right) => left - +right) },
-            { "*-", new(2, "*-", (left, right) => left * -right) },
-            { "*+", new(2, "*+", (left, right) => left * +right) },
-            { "/-", new(2, "/-", (left, right) => left / -right) },
-            { "/+", new(2, "/+", (left, right) => left / +right) },
-            { "%-", new(2, "%-", (left, right) => left % -right) },
-            { "%+", new(2, "%+", (left, right) => left % +right) },
-            { "<<", new(0, "<<", (left, right) => (int)left << (int)right) },
-            { ">>", new(0, ">>", (left, right) => (int)left >> (int)right) },
-        };
-
-    public static readonly Dictionary<string, AdditiveOperator> AdditiveOperators =
-        new()
-        {
-            { "+", new("+", (val) => +val) },
-            { "-", new("-", (val) => -val) },
-        };
     // csharpier-ignore-end
-
-    /// <summary>
-    /// Tokens that are not operators
-    /// </summary>
-    public static readonly string[] FlowTokens = { "(", ")", " ", "," };
-
-    /// <summary>
-    /// All the tokens sorted by length
-    /// </summary>
-    public static readonly string[] Tokens = BinaryOperators.Keys.Concat(FlowTokens).ToArray();
-
-    public record struct BinaryOperator(int Precedence, string Op, Func<double, double, double> Operation);
-
-    public record struct AdditiveOperator(string Op, Func<double, double> Operation);
-
-    public struct Funcall
-    {
-        public string Name { get; set; }
-        public Delegate Func { get; set; }
-        public int ArgAmount { get; set; }
-        public int Offset { get; set; }
-        public int Length { get; set; }
-
-        public Funcall(string name, int argAmount, Delegate func)
-        {
-            Name = name;
-            ArgAmount = argAmount;
-            Func = func;
-        }
-
-        public override string ToString()
-        {
-            return Name;
-        }
-    }
 }

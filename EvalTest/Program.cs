@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using Eval;
+using static Eval.Globals;
 
 double[] xs;
 double[] xss;
@@ -21,13 +22,13 @@ void Separator(string header = "")
 string GetTokens(string expr)
 {
     Lexer lexer = new(expr);
-    var tokens = "" + lexer.Pop();
-    var next = lexer.Pop();
+    var tokens = "" + lexer.NextToken();
+    var next = lexer.NextToken();
 
-    while (next != "")
+    while (next.Kind != TokenKind.End)
     {
         tokens += " " + next;
-        next = lexer.Pop();
+        next = lexer.NextToken();
     }
 
     return tokens;

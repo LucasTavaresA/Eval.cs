@@ -8,10 +8,11 @@ using static Eval.Globals;
 
 namespace Eval;
 
-public struct Lexer
+public unsafe struct Lexer
 {
-    public string Src { get; private set; }
-    public int Index { get; private set; } = 0;
+    private readonly char* SrcPtr;
+    public readonly string Src { get; }
+    public int Index { get; private set; }
 
     public Lexer(string src)
     {
@@ -19,106 +20,147 @@ public struct Lexer
         {
             throw new InvalidOperationException($"Expression cannot be empty");
         }
+        else if (src == null)
+        {
+            throw new InvalidOperationException($"Expression cannot be null");
+        }
 
-        Src = src ?? throw new InvalidOperationException($"Expression cannot be null");
+        Src = src;
+
+        fixed (char* ptr = src)
+        {
+            SrcPtr = ptr;
+        }
+    }
+
+    private static int SkipSpace(char* src, int index = 0)
+    {
+        while (src[index] == ' ')
+        {
+            index++;
+        }
+
+        return index;
     }
 
     /// <summary>
     /// Get the next token and move to the next index
     /// </summary>
-    public string Pop()
+    public Token NextToken()
     {
-        var nextIndex = PeekIndex();
-        var token = Src[Index..nextIndex].TrimStart();
-        Index = nextIndex;
-        return token;
-    }
+        var index = SkipSpace(SrcPtr, Index);
+        var nextIndex = SkipSpace(SrcPtr, index + 1);
 
-    /// <summary>
-    /// Get the next token index
-    /// </summary>
-    public int PeekIndex()
-    {
-        var spaceIndex = Index;
+        var src = SrcPtr + index;
 
-        if (spaceIndex < Src.Length)
+        if (SrcPtr[index] == '\0')
         {
-            while (Src[spaceIndex] == ' ')
-            {
-                spaceIndex++;
-            }
+            return new(TokenKind.End, "");
         }
 
-        var src = Src[spaceIndex..];
+        var next = SrcPtr[nextIndex];
 
-        if (src == "")
+        Token? token = SrcPtr[index] switch
         {
-            return Src.Length;
-        }
-
-        var index = -1;
-
-        foreach (var token in Tokens)
-        {
-            if (src.StartsWith(token, StringComparison.OrdinalIgnoreCase))
-            {
-                index = token.Length;
-                break;
-            }
-        }
-
-        if (index == -1)
-        {
-            var count = 0;
-
-            foreach (var c in src)
-            {
-                if (char.IsLetterOrDigit(c) || c == '.')
+            '\0' => new(TokenKind.End, ""),
+            '(' => new(TokenKind.OpenParen, "("),
+            ')' => new(TokenKind.CloseParen, ")"),
+            ',' => new(TokenKind.Comma, ","),
+            '+'
+                => next switch
                 {
-                    count++;
-                }
-                else
+                    '-' => new(TokenKind.Minus, "-"),
+                    '+' => new(TokenKind.Plus, "++"),
+                    _ => new(TokenKind.Plus, "+"),
+                },
+            '-'
+                => next switch
                 {
-                    break;
-                }
-            }
+                    '+' => new(TokenKind.Minus, "-+"),
+                    _ => new(TokenKind.Minus, "-"),
+                },
+            '*'
+                => next switch
+                {
+                    '+' => new(TokenKind.Multiply, "*+"),
+                    _ => new(TokenKind.Multiply, "*"),
+                },
+            '/'
+                => next switch
+                {
+                    '+' => new(TokenKind.Divide, "/+"),
+                    _ => new(TokenKind.Divide, "/"),
+                },
+            '%'
+                => next switch
+                {
+                    '+' => new(TokenKind.Modulo, "%+"),
+                    _ => new(TokenKind.Modulo, "%"),
+                },
+            '^' => new(TokenKind.Exponent, "^"),
+            '<'
+                => next switch
+                {
+                    '<' => new(TokenKind.ShiftLeft, "<<"),
+                    _
+                        => throw new InvalidExpressionException(
+                            $"Invalid operator '<{next}'",
+                            Src,
+                            index,
+                            2
+                        ),
+                },
+            '>'
+                => next switch
+                {
+                    '>' => new(TokenKind.ShiftRight, ">>"),
+                    _
+                        => throw new InvalidExpressionException(
+                            $"Invalid operator '>{next}'",
+                            Src,
+                            index,
+                            2
+                        ),
+                },
+            _ => null,
+        };
 
-            if (count > 0)
-            {
-                index = count;
-            }
+        if (token is Token t)
+        {
+            Index = t.Literal.Length + index;
+            return t;
         }
 
-        if (index == -1)
+        var count = 0;
+
+        while (src[count] != '\0' && (char.IsAsciiLetterOrDigit(src[count]) || src[count] == '.'))
+        {
+            count++;
+        }
+
+        if (count == 0)
         {
             throw new InvalidExpressionException(
-                $"Invalid character '{src[0]}'",
+                $"Invalid character '{src[count]}'",
                 Src,
-                spaceIndex,
+                index,
                 1
             );
         }
 
-        src = src[..index];
-        index += spaceIndex;
-
         // Handle scientific notation
-        if (
-            src.EndsWith("E", StringComparison.OrdinalIgnoreCase)
-            && src.Length > 1
-            && index + 1 < Src.Length
-            && AdditiveOperators.ContainsKey(Src[index].ToString())
-        )
+        if (src[count - 1] is 'E' or 'e' && src[count] is '+' or '-')
         {
-            index++;
+            count++;
 
-            while (index < Src.Length && char.IsDigit(Src[index]))
+            while (src[count] != '\0' && char.IsAsciiDigit(src[count]))
             {
-                index++;
+                count++;
             }
         }
 
-        return index;
+        Index = index + count;
+        return new(TokenKind.Symbol, new string(SrcPtr, index, count));
     }
 }
 
@@ -139,48 +181,36 @@ internal struct Parser
 
     internal static List<object> Parse(ref Lexer lexer)
     {
-        Stack<object> operators = new();
-        List<object> output = new();
-        Stack<int> args = new();
-        var token = lexer.Pop();
+        var operators = new Stack<object>();
+        var output = new List<object>();
+        var args = new Stack<int>();
+        var token = lexer.NextToken();
 
         // expression starts with additive
-        if (AdditiveOperators.TryGetValue(token, out var additive))
+        if (token.Kind == TokenKind.Minus)
         {
-            operators.Push(additive);
-            token = lexer.Pop();
+            operators.Push(Negative);
+            token = lexer.NextToken();
+        }
+        else if (token.Kind == TokenKind.Plus)
+        {
+            token = lexer.NextToken();
         }
 
-        while (token != "")
+        while (token.Kind != TokenKind.End)
         {
-            if (
-                double.TryParse(
-                    token,
-                    NumberStyles.Float,
-                    CultureInfo.InvariantCulture,
-                    out var number
-                ) || Variables.TryGetValue(CleanSymbol(token), out number)
-            )
+            if (token.Kind < TokenKind.Symbol)
             {
-                output.Add(number);
-                token = lexer.Pop();
-            }
-            else if (Functions.TryGetValue(CleanSymbol(token), out var funcall))
-            {
-                args.Push(1);
-                funcall.Offset = lexer.Index - token.Length;
-                operators.Push(funcall);
-                token = lexer.Pop();
-            }
-            else if (BinaryOperators.TryGetValue(token, out var cbop))
-            {
+                var binaryOperator = BinaryOperators[token.Kind];
+
                 while (
                     operators.Count > 0
                     && (
-                        operators.Peek() is AdditiveOperator
+                        // additive
+                        operators.Peek() is Delegate
                         || (
                             operators.Peek() is BinaryOperator bop
-                            && cbop.Precedence <= bop.Precedence
+                            && binaryOperator.Precedence <= bop.Precedence
                         )
                     )
                 )
@@ -188,34 +218,71 @@ internal struct Parser
                     output.Add(operators.Pop());
                 }
 
-                operators.Push(cbop);
+                operators.Push(binaryOperator);
 
-                token = lexer.Pop();
+                token = lexer.NextToken();
 
-                // additive operator in front of a binary operator
-                // TODO(LucasTA): Remove since its useless when lexer produce tokens
-                if (AdditiveOperators.TryGetValue(token, out additive))
+                // additive in front of a binary operator
+                if (token.Kind == TokenKind.Minus)
                 {
-                    operators.Push(additive);
-                    token = lexer.Pop();
+                    operators.Push(Negative);
+                    token = lexer.NextToken();
+                }
+                else if (token.Kind == TokenKind.Plus)
+                {
+                    token = lexer.NextToken();
                 }
             }
-            else if (token == "(")
+            else if (token.Kind == TokenKind.Symbol)
             {
-                // HACK(LucasTA): Remove this
-                //   used only to check if inside parens later
-                //   also stores its position for errors
-                operators.Push(new Paren(token, lexer.Index));
-                token = lexer.Pop();
+                var symbol = CleanSymbol(token.Literal);
+
+                if (
+                    double.TryParse(
+                        token.Literal,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var number
+                    ) || Variables.TryGetValue(symbol, out number)
+                )
+                {
+                    output.Add(number);
+                    token = lexer.NextToken();
+                }
+                else if (Functions.TryGetValue(symbol, out var funcall))
+                {
+                    args.Push(1);
+                    funcall.Offset = lexer.Index - token.Literal.Length;
+                    operators.Push(funcall);
+                    token = lexer.NextToken();
+                }
+                else
+                {
+                    throw new InvalidExpressionException(
+                        $"Invalid variable or function: '{token}'",
+                        lexer.Src,
+                        lexer.Index - token.Literal.Length,
+                        token.Literal.Length
+                    );
+                }
+            }
+            else if (token.Kind == TokenKind.OpenParen)
+            {
+                // used to check if inside parens later
+                operators.Push(new Paren(token.Literal, lexer.Index));
+                token = lexer.NextToken();
 
                 // expression inside parens starts with additive
-                if (AdditiveOperators.TryGetValue(token, out additive))
+                if (token.Kind == TokenKind.Minus)
                 {
-                    operators.Push(additive);
-                    token = lexer.Pop();
+                    operators.Push(Negative);
+                    token = lexer.NextToken();
                 }
-
-                if (token == ")")
+                else if (token.Kind == TokenKind.Plus)
+                {
+                    token = lexer.NextToken();
+                }
+                else if (token.Kind == TokenKind.CloseParen)
                 {
                     throw new InvalidExpressionException(
                         "Empty parens",
@@ -225,73 +292,79 @@ internal struct Parser
                     );
                 }
             }
-            else if (token is ")" or ",")
+            else if (token.Kind is TokenKind.Comma)
             {
                 while (operators.Count > 0 && operators.Peek() is not Paren)
                 {
                     output.Add(operators.Pop());
                 }
 
-                if (token == ",")
+                args.Push(args.Pop() + 1);
+
+                token = lexer.NextToken();
+
+                // argument starts with additive
+                if (token.Kind == TokenKind.Minus)
                 {
-                    args.Push(args.Pop() + 1);
-
-                    token = lexer.Pop();
-
-                    // argument starts with additive
-                    if (AdditiveOperators.TryGetValue(token, out additive))
-                    {
-                        operators.Push(additive);
-                        token = lexer.Pop();
-                    }
+                    operators.Push(Negative);
+                    token = lexer.NextToken();
                 }
-                else if (token == ")")
+                else if (token.Kind == TokenKind.Plus)
                 {
-                    // discard (
-                    if (!operators.TryPop(out _))
+                    token = lexer.NextToken();
+                }
+            }
+            else if (token.Kind is TokenKind.CloseParen)
+            {
+                while (operators.Count > 0 && operators.Peek() is not Paren)
+                {
+                    output.Add(operators.Pop());
+                }
+
+                // discard (
+                if (!operators.TryPop(out _))
+                {
+                    throw new InvalidExpressionException(
+                        "Closing unexsistent paren",
+                        lexer.Src,
+                        lexer.Index - 1,
+                        1
+                    );
+                }
+
+                if (operators.TryPeek(out var op) && op is Funcall function)
+                {
+                    _ = operators.Pop();
+                    var received = args.Pop();
+
+                    if (function.ArgAmount == 0)
                     {
-                        throw new InvalidExpressionException(
-                            "Closing unexsistent paren",
+                        function.ArgAmount = received;
+                    }
+                    else if (function.ArgAmount != received)
+                    {
+                        throw new ArgumentAmountException(
                             lexer.Src,
-                            lexer.Index - 1,
-                            1
+                            function.Name,
+                            function.ArgAmount,
+                            received,
+                            function.Offset,
+                            lexer.Index
                         );
                     }
 
-                    if (operators.TryPeek(out var op) && op is Funcall function)
-                    {
-                        _ = operators.Pop();
-                        var received = args.Pop();
-
-                        if (function.ArgAmount == 0)
-                        {
-                            function.ArgAmount = received;
-                        }
-                        else if (function.ArgAmount != received)
-                        {
-                            throw new ArgumentAmountException(
-                                lexer.Src,
-                                function.Name,
-                                function.ArgAmount,
-                                received,
-                                function.Offset,
-                                lexer.Index
-                            );
-                        }
-
-                        output.Add(function);
-                    }
-
-                    token = lexer.Pop();
+                    output.Add(function);
                 }
+
+                token = lexer.NextToken();
             }
             else
             {
                 throw new InvalidExpressionException(
-                    $"Invalid variable or function: '{token}'",
+                    $"Invalid token: '{token}'",
                     lexer.Src,
-                    lexer.Index - token.Length,
-                    token.Length
+                    lexer.Index - token.Literal.Length,
+                    token.Literal.Length
                 );
             }
         }
@@ -335,7 +408,7 @@ public struct Evaluator
 
     internal static double Evaluate(List<object> expr)
     {
-        Stack<double> operands = new();
+        var operands = new Stack<double>();
         double[] args;
 
         for (var i = 0; i < expr.Count; i++)
@@ -345,9 +418,9 @@ public struct Evaluator
                 case double number:
                     operands.Push(number);
                     break;
-                case AdditiveOperator additive:
+                case Func<double, double> negative:
                     args = PopArgs(operands, 1);
-                    operands.Push(additive.Operation(args[0]));
+                    operands.Push(negative(args[0]));
                     break;
                 case BinaryOperator bop:
                     args = PopArgs(operands, 2);
@@ -393,7 +466,7 @@ public struct Evaluator
 
     public static double Evaluate(string expr)
     {
-        Lexer lexer = new(expr);
+        var lexer = new Lexer(expr);
         return Evaluate(Parser.Parse(ref lexer));
     }
 }
