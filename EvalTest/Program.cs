@@ -6,6 +6,20 @@ using System.Linq;
 using Eval;
 using static Eval.Globals;
 
+// generate csharp tests using exprgen
+// $ ExprGen | EvalTest gen >> file.cs
+if (args.Length > 0 && args[0] == "gen")
+{
+    string input;
+
+    while ((input = Console.ReadLine()) != null)
+    {
+        Console.WriteLine($"""Test({input}, "{input}");""");
+    }
+
+    Environment.Exit(0);
+}
+
 double[] xs;
 double[] xss;
 double result;
