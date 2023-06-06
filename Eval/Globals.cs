@@ -9,6 +9,42 @@ namespace Eval;
 
 public struct Globals
 {
+    public static readonly Delegate Negative = (double val) => -val;
+
+    public readonly record struct Token(TokenKind Kind, string Literal)
+    {
+        public override string ToString() => Literal;
+    };
+
+    public readonly record struct BinaryOperator(
+        int Precedence,
+        string Op,
+        Func<double, double, double> Operation
+    );
+
+    // use function keyword here
+#pragma warning disable CA1716
+    public struct Function
+    {
+        public string Name { get; set; }
+        public Delegate Funcall { get; set; }
+        public int Args { get; set; }
+        public int Offset { get; set; }
+        public int Length { get; set; }
+
+        public Function(string name, int argAmount, Delegate funcall)
+        {
+            Name = name;
+            Args = argAmount;
+            Funcall = funcall;
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
     public enum TokenKind
     {
         // operators
@@ -21,8 +57,9 @@ public struct Globals
         ShiftLeft,
         ShiftRight,
 
-        // numbers variables and functions
-        Symbol = 8,
+        Number = 8,
+        Variable,
+        Function,
 
         // control flow
         OpenParen,
@@ -31,39 +68,17 @@ public struct Globals
         End,
     }
 
-    public record struct Token(TokenKind Kind, string Literal)
+    public static readonly string[] BinaryOperatorsKeys =
     {
-        public override string ToString() => Literal;
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "^",
+        "<<",
+        ">>",
     };
-
-    public record struct BinaryOperator(
-        int Precedence,
-        string Op,
-        Func<double, double, double> Operation
-    );
-
-    public static readonly Delegate Negative = (double val) => -val;
-
-    public struct Funcall
-    {
-        public string Name { get; set; }
-        public Delegate Func { get; set; }
-        public int ArgAmount { get; set; }
-        public int Offset { get; set; }
-        public int Length { get; set; }
-
-        public Funcall(string name, int argAmount, Delegate func)
-        {
-            Name = name;
-            ArgAmount = argAmount;
-            Func = func;
-        }
-
-        public override string ToString()
-        {
-            return Name;
-        }
-    }
 
     // csharpier-ignore-start
     public static readonly Dictionary<TokenKind, BinaryOperator> BinaryOperators =
@@ -79,18 +94,6 @@ public struct Globals
             { TokenKind.ShiftRight, new(0, ">>", (double left, double right) => (int)left >> (int)right) },
         };
 
-    public static readonly string[] BinaryOperatorsKeys =
-        {
-            "+",
-            "-",
-            "*",
-            "/",
-            "%",
-            "^",
-            "<<",
-            ">>",
-        };
-
     public static readonly Dictionary<string, double> Variables =
         new()
         {
@@ -99,7 +102,7 @@ public struct Globals
             { "tau", Math.Tau },
         };
 
-    public static readonly Dictionary<string, Funcall> Functions =
+    public static readonly Dictionary<string, Function> Functions =
         new()
         {
             { "average",          new("average",          0, (double[] args) => args.Average()) },

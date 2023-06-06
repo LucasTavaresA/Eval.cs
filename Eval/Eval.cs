@@ -8,39 +8,66 @@ using static Eval.Globals;
 
 namespace Eval;
 
-public unsafe struct Lexer
+public struct Lexer
 {
-    private readonly char* SrcPtr;
     public readonly string Src { get; }
     public int Index { get; private set; }
+    private int NextIndex { get; set; }
+    private char Ch { get; set; }
 
     public Lexer(string src)
     {
-        if (src == "")
-        {
-            throw new InvalidOperationException($"Expression cannot be empty");
-        }
-        else if (src == null)
-        {
-            throw new InvalidOperationException($"Expression cannot be null");
-        }
+        Src = src == null
+            ? throw new InvalidOperationException($"Expression cannot be null")
+            : src == ""
+                ? throw new InvalidOperationException($"Expression cannot be empty")
+                : src;
 
-        Src = src;
+        NextChar();
+    }
 
-        fixed (char* ptr = src)
+    public void NextChar()
+    {
+        Ch = NextIndex >= Src.Length ? '\0' : Src[NextIndex];
+        Index = NextIndex;
+        NextIndex += 1;
+    }
+
+    public char PeekChar()
+    {
+        return NextIndex >= Src.Length ? '\0' : Src[NextIndex];
+    }
+
+    private void SkipSpace()
+    {
+        while (char.IsWhiteSpace(Ch))
         {
-            SrcPtr = ptr;
+            NextChar();
         }
     }
 
-    private static int SkipSpace(char* src, int index = 0)
+    public ReadOnlySpan<char> ReadSymbol()
     {
-        while (src[index] == ' ')
+        var pos = Index;
+
+        while (char.IsAsciiLetter(Ch) || Ch == '.')
         {
-            index++;
+            NextChar();
         }
 
-        return index;
+        return Src.AsSpan()[pos..Index];
+    }
+
+    public ReadOnlySpan<char> ReadNumber()
+    {
+        var pos = Index;
+
+        while (char.IsAsciiDigit(Ch) || Ch == '.')
+        {
+            NextChar();
+        }
+
+        return Src.AsSpan()[pos..Index];
     }
 
     /// <summary>
@@ -48,125 +75,173 @@ public unsafe struct Lexer
     /// </summary>
     public Token NextToken()
     {
-        var index = SkipSpace(SrcPtr, Index);
-        var nextIndex = SkipSpace(SrcPtr, index + 1);
+        SkipSpace();
 
-        var src = SrcPtr + index;
-
-        if (SrcPtr[index] == '\0')
+        if (char.IsAsciiDigit(Ch))
         {
-            return new(TokenKind.End, "");
-        }
+            var number = ReadNumber();
+            var additive = PeekChar();
 
-        var next = SrcPtr[nextIndex];
-
-        Token? token = SrcPtr[index] switch
-        {
-            '\0' => new(TokenKind.End, ""),
-            '(' => new(TokenKind.OpenParen, "("),
-            ')' => new(TokenKind.CloseParen, ")"),
-            ',' => new(TokenKind.Comma, ","),
-            '+'
-                => next switch
-                {
-                    '-' => new(TokenKind.Minus, "-"),
-                    '+' => new(TokenKind.Plus, "++"),
-                    _ => new(TokenKind.Plus, "+"),
-                },
-            '-'
-                => next switch
-                {
-                    '+' => new(TokenKind.Minus, "-+"),
-                    _ => new(TokenKind.Minus, "-"),
-                },
-            '*'
-                => next switch
-                {
-                    '+' => new(TokenKind.Multiply, "*+"),
-                    _ => new(TokenKind.Multiply, "*"),
-                },
-            '/'
-                => next switch
-                {
-                    '+' => new(TokenKind.Divide, "/+"),
-                    _ => new(TokenKind.Divide, "/"),
-                },
-            '%'
-                => next switch
-                {
-                    '+' => new(TokenKind.Modulo, "%+"),
-                    _ => new(TokenKind.Modulo, "%"),
-                },
-            '^' => new(TokenKind.Exponent, "^"),
-            '<'
-                => next switch
-                {
-                    '<' => new(TokenKind.ShiftLeft, "<<"),
-                    _
-                        => throw new InvalidExpressionException(
-                            $"Invalid operator '<{next}'",
-                            Src,
-                            index,
-                            2
-                        ),
-                },
-            '>'
-                => next switch
-                {
-                    '>' => new(TokenKind.ShiftRight, ">>"),
-                    _
-                        => throw new InvalidExpressionException(
-                            $"Invalid operator '>{next}'",
-                            Src,
-                            index,
-                            2
-                        ),
-                },
-            _ => null,
-        };
-
-        if (token is Token t)
-        {
-            Index = t.Literal.Length + index;
-            return t;
-        }
-
-        var count = 0;
-
-        while (src[count] != '\0' && (char.IsAsciiLetterOrDigit(src[count]) || src[count] == '.'))
-        {
-            count++;
-        }
-
-        if (count == 0)
-        {
-            throw new InvalidExpressionException(
-                $"Invalid character '{src[count]}'",
-                Src,
-                index,
-                1
-            );
-        }
-
-        // Handle scientific notation
-        if (src[count - 1] is 'E' or 'e' && src[count] is '+' or '-')
-        {
-            count++;
-
-            while (src[count] != '\0' && char.IsAsciiDigit(src[count]))
+            // Handle scientific notation
+            if (Ch is 'E' or 'e')
             {
-                count++;
+                if (additive is '+' or '-')
+                {
+                    NextChar();
+                    NextChar();
+                    return new(TokenKind.Number, $"{number}e{additive}{ReadNumber()}");
+                }
+                else
+                {
+                    throw new InvalidExpressionException(
+                        "Scientific notation cannot have space",
+                        Src,
+                        NextIndex,
+                        1
+                    );
+                }
             }
+
+            return new(TokenKind.Number, number.ToString());
         }
 
-        Index = index + count;
-        return new(TokenKind.Symbol, new string(SrcPtr, index, count));
+        if (char.IsAsciiLetter(Ch))
+        {
+            var symbol = ReadSymbol();
+
+            return Ch switch
+            {
+                '(' => new(TokenKind.Function, symbol.ToString()),
+                _ => new(TokenKind.Variable, symbol.ToString()),
+            };
+        }
+
+        var nextChar = PeekChar();
+
+        switch (Ch)
+        {
+            case '\0':
+                NextChar();
+                return new(TokenKind.End, "");
+            case '(':
+                NextChar();
+                return new(TokenKind.OpenParen, "(");
+            case ')':
+                NextChar();
+                return new(TokenKind.CloseParen, ")");
+            case ',':
+                NextChar();
+                return new(TokenKind.Comma, ",");
+            case '^':
+                NextChar();
+                return new(TokenKind.Exponent, "^");
+            case '+':
+                switch (nextChar)
+                {
+                    case '-':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Minus, "+-");
+                    case '+':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Plus, "++");
+                    default:
+                        NextChar();
+                        return new(TokenKind.Plus, "+");
+                }
+            case '-':
+                switch (nextChar)
+                {
+                    case '-':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Minus, "--");
+                    case '+':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Minus, "-+");
+                    default:
+                        NextChar();
+                        return new(TokenKind.Minus, "-");
+                }
+            case '*':
+                switch (nextChar)
+                {
+                    case '+':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Multiply, "*+");
+                    default:
+                        NextChar();
+                        return new(TokenKind.Multiply, "*");
+                }
+            case '/':
+                switch (nextChar)
+                {
+                    case '+':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Divide, "/+");
+                    default:
+                        NextChar();
+                        return new(TokenKind.Divide, "/");
+                }
+            case '%':
+                switch (nextChar)
+                {
+                    case '+':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.Modulo, "%+");
+                    default:
+                        NextChar();
+                        return new(TokenKind.Modulo, "%");
+                }
+            case '<':
+                switch (nextChar)
+                {
+                    case '<':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.ShiftLeft, "<<");
+                    default:
+                        throw new InvalidExpressionException(
+                            $"Invalid operator '<{nextChar}'",
+                            Src,
+                            NextIndex,
+                            2
+                        );
+                }
+            case '>':
+                switch (nextChar)
+                {
+                    case '>':
+                        NextChar();
+                        NextChar();
+                        return new(TokenKind.ShiftRight, ">>");
+                    default:
+                        throw new InvalidExpressionException(
+                            $"Invalid operator '>{nextChar}'",
+                            Src,
+                            NextIndex,
+                            2
+                        );
+                }
+            default:
+                throw new InvalidExpressionException(
+                    $"Invalid character '{Ch}'",
+                    Src,
+                    Index,
+                    1
+                );
+        }
     }
 }
 
 internal struct Parser
 {
-    private static string CleanSymbol(string symbol)
+    private static string RemovePrefix(string symbol)
     {
         return (
             symbol.StartsWith("Math.", StringComparison.OrdinalIgnoreCase)
@@ -199,7 +274,7 @@ internal struct Parser
 
         while (token.Kind != TokenKind.End)
         {
-            if (token.Kind < TokenKind.Symbol)
+            if (token.Kind < TokenKind.Number)
             {
                 var binaryOperator = BinaryOperators[token.Kind];
 
@@ -233,23 +308,41 @@ internal struct Parser
                     token = lexer.NextToken();
                 }
             }
-            else if (token.Kind == TokenKind.Symbol)
+            else if (token.Kind == TokenKind.Number)
             {
-                var symbol = CleanSymbol(token.Literal);
-
                 if (
                     double.TryParse(
                         token.Literal,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
                         out var number
-                    ) || Variables.TryGetValue(symbol, out number)
+                    )
                 )
                 {
                     output.Add(number);
                     token = lexer.NextToken();
                 }
-                else if (Functions.TryGetValue(symbol, out var funcall))
+            }
+            else if (token.Kind == TokenKind.Variable)
+            {
+                if (Variables.TryGetValue(RemovePrefix(token.Literal), out var variable))
+                {
+                    output.Add(variable);
+                    token = lexer.NextToken();
+                }
+                else
+                {
+                    throw new InvalidExpressionException(
+                        $"Invalid variable: '{token}'",
+                        lexer.Src,
+                        lexer.Index - token.Literal.Length,
+                        token.Literal.Length
+                    );
+                }
+            }
+            else if (token.Kind == TokenKind.Function)
+            {
+                if (Functions.TryGetValue(RemovePrefix(token.Literal), out var funcall))
                 {
                     args.Push(1);
                     funcall.Offset = lexer.Index - token.Literal.Length;
@@ -259,7 +352,7 @@ internal struct Parser
                 else
                 {
                     throw new InvalidExpressionException(
-                        $"Invalid variable or function: '{token}'",
+                        $"Invalid function: '{token}'",
                         lexer.Src,
                         lexer.Index - token.Literal.Length,
                         token.Literal.Length
@@ -332,21 +425,21 @@ internal struct Parser
                     );
                 }
 
-                if (operators.TryPeek(out var op) && op is Funcall function)
+                if (operators.TryPeek(out var op) && op is Function function)
                 {
                     _ = operators.Pop();
                     var received = args.Pop();
 
-                    if (function.ArgAmount == 0)
+                    if (function.Args == 0)
                     {
-                        function.ArgAmount = received;
+                        function.Args = received;
                     }
-                    else if (function.ArgAmount != received)
+                    else if (function.Args != received)
                     {
                         throw new ArgumentAmountException(
                             lexer.Src,
                             function.Name,
-                            function.ArgAmount,
+                            function.Args,
                             received,
                             function.Offset,
                             lexer.Index
@@ -426,25 +519,25 @@ public struct Evaluator
                     args = PopArgs(operands, 2);
                     operands.Push(bop.Operation(args[1], args[0]));
                     break;
-                case Funcall func:
-                    switch (func.Func)
+                case Function function:
+                    switch (function.Funcall)
                     {
-                        case Func<double, double> func1:
+                        case Func<double, double> f1:
                             args = PopArgs(operands, 1);
-                            operands.Push(func1(args[0]));
+                            operands.Push(f1(args[0]));
                             break;
-                        case Func<double, double, double> func2:
+                        case Func<double, double, double> f2:
                             args = PopArgs(operands, 2);
-                            operands.Push(func2(args[1], args[0]));
+                            operands.Push(f2(args[1], args[0]));
                             break;
-                        case Func<double, double, double, double> func3:
+                        case Func<double, double, double, double> f3:
                             args = PopArgs(operands, 3);
-                            operands.Push(func3(args[2], args[1], args[0]));
+                            operands.Push(f3(args[2], args[1], args[0]));
                             break;
-                        case Func<double[], double> vfunc:
-                            args = PopArgs(operands, func.ArgAmount);
+                        case Func<double[], double> vf:
+                            args = PopArgs(operands, function.Args);
                             Array.Reverse(args);
-                            operands.Push(vfunc(args));
+                            operands.Push(vf(args));
                             break;
                         default:
                             throw new UnexpectedEvaluationException(
@@ -460,7 +553,7 @@ public struct Evaluator
         return operands.TryPop(out var result)
             ? result
             : throw new UnexpectedEvaluationException(
-                $"Lack of operands when returning evaluation result"
+                $"Evaluation ended with no results"
             );
     }
 
