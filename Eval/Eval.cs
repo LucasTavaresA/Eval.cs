@@ -8,39 +8,39 @@ using static Eval.Globals;
 
 namespace Eval;
 
-public struct Lexer
+public ref struct Lexer
 {
-    public readonly string Src { get; }
+    public ReadOnlySpan<char> Input { get; set; }
     public int Index { get; private set; }
     private int NextIndex { get; set; }
-    private char Ch { get; set; }
+    private char Char { get; set; }
 
-    public Lexer(string src)
+    public Lexer(ReadOnlySpan<char> input)
     {
-        Src = src == null
+        Input = input == null
             ? throw new InvalidOperationException($"Expression cannot be null")
-            : src == ""
+            : input.ToString() == ""
                 ? throw new InvalidOperationException($"Expression cannot be empty")
-                : src;
+                : input;
 
         NextChar();
     }
 
     public void NextChar()
     {
-        Ch = NextIndex >= Src.Length ? '\0' : Src[NextIndex];
+        Char = NextIndex >= Input.Length ? '\0' : Input[NextIndex];
         Index = NextIndex;
         NextIndex += 1;
     }
 
     public char PeekChar()
     {
-        return NextIndex >= Src.Length ? '\0' : Src[NextIndex];
+        return NextIndex >= Input.Length ? '\0' : Input[NextIndex];
     }
 
     private void SkipSpace()
     {
-        while (char.IsWhiteSpace(Ch))
+        while (char.IsWhiteSpace(Char))
         {
             NextChar();
         }
@@ -50,24 +50,24 @@ public struct Lexer
     {
         var pos = Index;
 
-        while (char.IsAsciiLetter(Ch) || Ch == '.')
+        while (char.IsAsciiLetter(Char) || Char == '.')
         {
             NextChar();
         }
 
-        return Src.AsSpan()[pos..Index];
+        return Input[pos..Index];
     }
 
     public ReadOnlySpan<char> ReadNumber()
     {
         var pos = Index;
 
-        while (char.IsAsciiDigit(Ch) || Ch == '.')
+        while (char.IsAsciiDigit(Char) || Char == '.')
         {
             NextChar();
         }
 
-        return Src.AsSpan()[pos..Index];
+        return Input[pos..Index];
     }
 
     /// <summary>
@@ -77,13 +77,13 @@ public struct Lexer
     {
         SkipSpace();
 
-        if (char.IsAsciiDigit(Ch))
+        if (char.IsAsciiDigit(Char))
         {
             var number = ReadNumber();
             var additive = PeekChar();
 
             // Handle scientific notation
-            if (Ch is 'E' or 'e')
+            if (Char is 'E' or 'e')
             {
                 if (additive is '+' or '-')
                 {
@@ -95,7 +95,7 @@ public struct Lexer
                 {
                     throw new InvalidExpressionException(
                         "Scientific notation cannot have space",
-                        Src,
+                        Input.ToString(),
                         NextIndex,
                         1
                     );
@@ -105,11 +105,11 @@ public struct Lexer
             return new(TokenKind.Number, number.ToString());
         }
 
-        if (char.IsAsciiLetter(Ch))
+        if (char.IsAsciiLetter(Char))
         {
             var symbol = ReadSymbol();
 
-            return Ch switch
+            return Char switch
             {
                 '(' => new(TokenKind.Function, symbol.ToString()),
                 _ => new(TokenKind.Variable, symbol.ToString()),
@@ -118,7 +118,7 @@ public struct Lexer
 
         var nextChar = PeekChar();
 
-        switch (Ch)
+        switch (Char)
         {
             case '\0':
                 NextChar();
@@ -208,7 +208,7 @@ public struct Lexer
                     default:
                         throw new InvalidExpressionException(
                             $"Invalid operator '<{nextChar}'",
-                            Src,
+                            Input.ToString(),
                             NextIndex,
                             2
                         );
@@ -223,15 +223,15 @@ public struct Lexer
                     default:
                         throw new InvalidExpressionException(
                             $"Invalid operator '>{nextChar}'",
-                            Src,
+                            Input.ToString(),
                             NextIndex,
                             2
                         );
                 }
             default:
                 throw new InvalidExpressionException(
-                    $"Invalid character '{Ch}'",
-                    Src,
+                    $"Invalid character '{Char}'",
+                    Input.ToString(),
                     Index,
                     1
                 );
@@ -334,7 +334,7 @@ internal struct Parser
                 {
                     throw new InvalidExpressionException(
                         $"Invalid variable: '{token}'",
-                        lexer.Src,
+                        lexer.Input.ToString(),
                         lexer.Index - token.Literal.Length,
                         token.Literal.Length
                     );
@@ -353,7 +353,7 @@ internal struct Parser
                 {
                     throw new InvalidExpressionException(
                         $"Invalid function: '{token}'",
-                        lexer.Src,
+                        lexer.Input.ToString(),
                         lexer.Index - token.Literal.Length,
                         token.Literal.Length
                     );
@@ -379,7 +379,7 @@ internal struct Parser
                 {
                     throw new InvalidExpressionException(
                         "Empty parens",
-                        lexer.Src,
+                        lexer.Input.ToString(),
                         lexer.Index - 2,
                         2
                     );
@@ -419,7 +419,7 @@ internal struct Parser
                 {
                     throw new InvalidExpressionException(
                         "Closing unexsistent paren",
-                        lexer.Src,
+                        lexer.Input.ToString(),
                         lexer.Index - 1,
                         1
                     );
@@ -437,7 +437,7 @@ internal struct Parser
                     else if (function.Args != received)
                     {
                         throw new ArgumentAmountException(
-                            lexer.Src,
+                            lexer.Input.ToString(),
                             function.Name,
                             function.Args,
                             received,
@@ -455,7 +455,7 @@ internal struct Parser
             {
                 throw new InvalidExpressionException(
                     $"Invalid token: '{token}'",
-                    lexer.Src,
+                    lexer.Input.ToString(),
                     lexer.Index - token.Literal.Length,
                     token.Literal.Length
                 );
@@ -468,7 +468,7 @@ internal struct Parser
             {
                 throw new InvalidExpressionException(
                     "Opened paren is not closed",
-                    lexer.Src,
+                    lexer.Input.ToString(),
                     paren.Pos - 1,
                     1
                 );
