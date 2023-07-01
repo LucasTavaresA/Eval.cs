@@ -10,18 +10,19 @@ namespace Eval;
 
 public ref struct Lexer
 {
-    public ReadOnlySpan<char> Input { get; set; }
+    public readonly ReadOnlySpan<char> Input { get; }
     public int Index { get; private set; }
-    private int NextIndex { get; set; }
+    public int NextIndex { get; private set; }
     private char Char { get; set; }
 
     public Lexer(ReadOnlySpan<char> input)
     {
-        Input = input == null
-            ? throw new InvalidOperationException($"Expression cannot be null")
-            : input.ToString() == ""
-                ? throw new InvalidOperationException($"Expression cannot be empty")
-                : input;
+        Input =
+            input == null
+                ? throw new InvalidOperationException($"Expression cannot be null")
+                : input.ToString() == ""
+                    ? throw new InvalidOperationException($"Expression cannot be empty")
+                    : input;
 
         NextChar();
     }
@@ -33,7 +34,7 @@ public ref struct Lexer
         NextIndex += 1;
     }
 
-    public char PeekChar()
+    private readonly char PeekChar()
     {
         return NextIndex >= Input.Length ? '\0' : Input[NextIndex];
     }
@@ -552,9 +553,7 @@ public struct Evaluator
 
         return operands.TryPop(out var result)
             ? result
-            : throw new UnexpectedEvaluationException(
-                $"Evaluation ended with no results"
-            );
+            : throw new UnexpectedEvaluationException($"Evaluation ended with no results");
     }
 
     public static double Evaluate(string expr)

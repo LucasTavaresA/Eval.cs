@@ -9,8 +9,8 @@ public class UnexpectedEvaluationException : Exception
 {
     public string Reason { get; }
 
-    public override string Message =>
-        Reason == ""
+    public override string Message
+        => Reason == ""
             ? "Unexpected failure to evaluate."
             : $"Unexpected failure to evaluate: {Reason}.";
 
@@ -37,8 +37,8 @@ public class InvalidExpressionException : InvalidOperationException
 
 public class ArgumentAmountException : ArgumentException
 {
-    public override string Message =>
-        $"{Function}() expects {Expected} arguments but received {Received}";
+    public override string Message
+        => $"{Function}() expects {Expected} arguments but received {Received}";
     public string Src { get; }
     public string Function { get; }
     public int Expected { get; }

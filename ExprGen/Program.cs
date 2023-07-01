@@ -3,7 +3,7 @@
 
 using System;
 using Eval;
-using static Eval.Globals;
+using static Eval.Globals.TokenKind;
 
 namespace ExprGen;
 
@@ -20,7 +20,7 @@ public struct Program
     }
 }
 
-public struct Generators
+public readonly struct Generators
 {
     private record NOutOf(int N, int OutOf);
 
@@ -29,6 +29,18 @@ public struct Generators
     private static readonly (int Min, int Max) ExprLength = (2, 4);
     private static readonly (int Min, int Max) SpaceLength = (0, 2);
     private static readonly (int Integer, int Decimal) NumberLength = (1, 1);
+
+    private static readonly string[] BinaryOperators =
+    {
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "^",
+        "<<",
+        ">>",
+    };
 
     private static bool Chance(NOutOf chance)
     {
@@ -41,7 +53,7 @@ public struct Generators
         var tokens = Space() + lexer.NextToken();
         var next = lexer.NextToken();
 
-        while (next.Kind != TokenKind.End)
+        while (next.Kind != End)
         {
             tokens += Space() + next;
             next = lexer.NextToken();
@@ -70,7 +82,7 @@ public struct Generators
 
     private static string Operator()
     {
-        return BinaryOperatorsKeys[Random.Next(BinaryOperatorsKeys.Length)];
+        return BinaryOperators[Random.Next(BinaryOperators.Length)];
     }
 
     internal static string Expression()

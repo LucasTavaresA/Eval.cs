@@ -1,5 +1,6 @@
 ﻿// Licensed under the LGPL3 license.
 // See the LICENSE file in the project root for more information.
+#pragma warning disable CA1716
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 
 namespace Eval;
 
-public struct Globals
+public readonly struct Globals
 {
     public static readonly Delegate Negative = (double val) => -val;
 
@@ -22,8 +23,6 @@ public struct Globals
         Func<double, double, double> Operation
     );
 
-    // use function keyword here
-#pragma warning disable CA1716
     public struct Function
     {
         public string Name { get; set; }
@@ -39,7 +38,7 @@ public struct Globals
             Funcall = funcall;
         }
 
-        public override string ToString()
+        public override readonly string ToString()
         {
             return Name;
         }
@@ -66,19 +65,8 @@ public struct Globals
         CloseParen,
         Comma,
         End,
+        Illegal,
     }
-
-    public static readonly string[] BinaryOperatorsKeys =
-    {
-        "+",
-        "-",
-        "*",
-        "/",
-        "%",
-        "^",
-        "<<",
-        ">>",
-    };
 
     // csharpier-ignore-start
     public static readonly Dictionary<TokenKind, BinaryOperator> BinaryOperators =
