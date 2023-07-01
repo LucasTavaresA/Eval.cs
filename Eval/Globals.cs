@@ -19,7 +19,6 @@ public readonly struct Globals
 
     public readonly record struct Operator(
         int Precedence,
-        string Op,
         Func<double, double, double> Operation
     );
 
@@ -29,7 +28,6 @@ public readonly struct Globals
         public Delegate Funcall { get; set; }
         public int Args { get; set; }
         public int Offset { get; set; }
-        public int Length { get; set; }
 
         public Function(string name, int argAmount, Delegate funcall)
         {
@@ -72,14 +70,14 @@ public readonly struct Globals
     public static readonly Dictionary<TokenKind, Operator> Operators =
         new()
         {
-            { TokenKind.Plus,       new(1, "+",  (double left, double right) => left + right) },
-            { TokenKind.Minus,      new(1, "-",  (double left, double right) => left - right) },
-            { TokenKind.Multiply,   new(2, "*",  (double left, double right) => left * right) },
-            { TokenKind.Divide,     new(2, "/",  (double left, double right) => left / right) },
-            { TokenKind.Modulo,     new(2, "%",  (double left, double right) => left % right) },
-            { TokenKind.Exponent,   new(3, "^",  Math.Pow) },
-            { TokenKind.ShiftLeft,  new(0, "<<", (double left, double right) => (int)left << (int)right) },
-            { TokenKind.ShiftRight, new(0, ">>", (double left, double right) => (int)left >> (int)right) },
+            { TokenKind.Plus,       new(1, (double left, double right) => left + right) },
+            { TokenKind.Minus,      new(1, (double left, double right) => left - right) },
+            { TokenKind.Multiply,   new(2, (double left, double right) => left * right) },
+            { TokenKind.Divide,     new(2, (double left, double right) => left / right) },
+            { TokenKind.Modulo,     new(2, (double left, double right) => left % right) },
+            { TokenKind.Exponent,   new(3, Math.Pow) },
+            { TokenKind.ShiftLeft,  new(0, (double left, double right) => (int)left << (int)right) },
+            { TokenKind.ShiftRight, new(0, (double left, double right) => (int)left >> (int)right) },
         };
 
     public static readonly Dictionary<string, TokenKind> Tokens =
