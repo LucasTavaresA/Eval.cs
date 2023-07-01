@@ -17,13 +17,7 @@ public ref struct Lexer
 
     public Lexer(ReadOnlySpan<char> input)
     {
-        Input =
-            input == null
-                ? throw new InvalidOperationException($"Expression cannot be null")
-                : input.ToString() == ""
-                    ? throw new InvalidOperationException($"Expression cannot be empty")
-                    : input;
-
+        Input = input;
         NextChar();
     }
 
@@ -455,7 +449,7 @@ public struct Evaluator
 
         return operands.TryPop(out var result)
             ? result
-            : throw new UnexpectedEvaluationException($"Evaluation ended with no results");
+            : throw new UnexpectedEvaluationException($"There is no expression to evaluate");
     }
 
     public static double Evaluate(string expr)
