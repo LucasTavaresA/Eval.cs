@@ -108,134 +108,36 @@ public ref struct Lexer
 
         if (char.IsAsciiLetter(Char))
         {
-            var symbol = ReadSymbol();
+            var symbol = ReadSymbol().ToString();
 
             return Char switch
             {
-                '(' => new(TokenKind.Function, symbol.ToString()),
-                _ => new(TokenKind.Variable, symbol.ToString()),
+                '(' => new(TokenKind.Function, symbol),
+                _ => new(TokenKind.Variable, symbol),
             };
         }
 
-        var nextChar = PeekChar();
+        var ch = Char.ToString();
+        var doubleChar = ch + PeekChar();
 
-        switch (Char)
+        if (Tokens.TryGetValue(doubleChar, out var tokenKind))
         {
-            case '\0':
+            NextChar();
+            NextChar();
+            return new(tokenKind, doubleChar);
+        }
+        else
+        {
+            if (Tokens.TryGetValue(ch, out tokenKind))
+            {
                 NextChar();
-                return new(TokenKind.End, "");
-            case '(':
+                return new(tokenKind, ch);
+            }
+            else
+            {
                 NextChar();
-                return new(TokenKind.OpenParen, "(");
-            case ')':
-                NextChar();
-                return new(TokenKind.CloseParen, ")");
-            case ',':
-                NextChar();
-                return new(TokenKind.Comma, ",");
-            case '^':
-                NextChar();
-                return new(TokenKind.Exponent, "^");
-            case '+':
-                switch (nextChar)
-                {
-                    case '-':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Minus, "+-");
-                    case '+':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Plus, "++");
-                    default:
-                        NextChar();
-                        return new(TokenKind.Plus, "+");
-                }
-            case '-':
-                switch (nextChar)
-                {
-                    case '-':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Minus, "--");
-                    case '+':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Minus, "-+");
-                    default:
-                        NextChar();
-                        return new(TokenKind.Minus, "-");
-                }
-            case '*':
-                switch (nextChar)
-                {
-                    case '+':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Multiply, "*+");
-                    default:
-                        NextChar();
-                        return new(TokenKind.Multiply, "*");
-                }
-            case '/':
-                switch (nextChar)
-                {
-                    case '+':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Divide, "/+");
-                    default:
-                        NextChar();
-                        return new(TokenKind.Divide, "/");
-                }
-            case '%':
-                switch (nextChar)
-                {
-                    case '+':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.Modulo, "%+");
-                    default:
-                        NextChar();
-                        return new(TokenKind.Modulo, "%");
-                }
-            case '<':
-                switch (nextChar)
-                {
-                    case '<':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.ShiftLeft, "<<");
-                    default:
-                        throw new InvalidExpressionException(
-                            $"Invalid operator '<{nextChar}'",
-                            Input.ToString(),
-                            NextIndex,
-                            2
-                        );
-                }
-            case '>':
-                switch (nextChar)
-                {
-                    case '>':
-                        NextChar();
-                        NextChar();
-                        return new(TokenKind.ShiftRight, ">>");
-                    default:
-                        throw new InvalidExpressionException(
-                            $"Invalid operator '>{nextChar}'",
-                            Input.ToString(),
-                            NextIndex,
-                            2
-                        );
-                }
-            default:
-                throw new InvalidExpressionException(
-                    $"Invalid character '{Char}'",
-                    Input.ToString(),
-                    Index,
-                    1
-                );
+                return new(TokenKind.Illegal, ch);
+            }
         }
     }
 }
@@ -277,7 +179,7 @@ internal struct Parser
         {
             if (token.Kind < TokenKind.Number)
             {
-                var binaryOperator = BinaryOperators[token.Kind];
+                var op = Operators[token.Kind];
 
                 while (
                     operators.Count > 0
@@ -285,8 +187,8 @@ internal struct Parser
                         // additive
                         operators.Peek() is Delegate
                         || (
-                            operators.Peek() is BinaryOperator bop
-                            && binaryOperator.Precedence <= bop.Precedence
+                            operators.Peek() is Operator next
+                            && op.Precedence <= next.Precedence
                         )
                     )
                 )
@@ -294,7 +196,7 @@ internal struct Parser
                     output.Add(operators.Pop());
                 }
 
-                operators.Push(binaryOperator);
+                operators.Push(op);
 
                 token = lexer.NextToken();
 
@@ -516,9 +418,9 @@ public struct Evaluator
                     args = PopArgs(operands, 1);
                     operands.Push(negative(args[0]));
                     break;
-                case BinaryOperator bop:
+                case Operator op:
                     args = PopArgs(operands, 2);
-                    operands.Push(bop.Operation(args[1], args[0]));
+                    operands.Push(op.Operation(args[1], args[0]));
                     break;
                 case Function function:
                     switch (function.Funcall)

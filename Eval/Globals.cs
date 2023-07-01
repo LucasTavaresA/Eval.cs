@@ -17,7 +17,7 @@ public readonly struct Globals
         public override string ToString() => Literal;
     };
 
-    public readonly record struct BinaryOperator(
+    public readonly record struct Operator(
         int Precedence,
         string Op,
         Func<double, double, double> Operation
@@ -69,17 +69,41 @@ public readonly struct Globals
     }
 
     // csharpier-ignore-start
-    public static readonly Dictionary<TokenKind, BinaryOperator> BinaryOperators =
+    public static readonly Dictionary<TokenKind, Operator> Operators =
         new()
         {
-            { TokenKind.Plus,  new(1, "+",  (double left, double right) => left + right) },
-            { TokenKind.Minus,  new(1, "-",  (double left, double right) => left - right) },
-            { TokenKind.Multiply,  new(2, "*",  (double left, double right) => left * right) },
-            { TokenKind.Divide,  new(2, "/",  (double left, double right) => left / right) },
-            { TokenKind.Modulo,  new(2, "%",  (double left, double right) => left % right) },
-            { TokenKind.Exponent,  new(3, "^",  Math.Pow) },
-            { TokenKind.ShiftLeft, new(0, "<<", (double left, double right) => (int)left << (int)right) },
+            { TokenKind.Plus,       new(1, "+",  (double left, double right) => left + right) },
+            { TokenKind.Minus,      new(1, "-",  (double left, double right) => left - right) },
+            { TokenKind.Multiply,   new(2, "*",  (double left, double right) => left * right) },
+            { TokenKind.Divide,     new(2, "/",  (double left, double right) => left / right) },
+            { TokenKind.Modulo,     new(2, "%",  (double left, double right) => left % right) },
+            { TokenKind.Exponent,   new(3, "^",  Math.Pow) },
+            { TokenKind.ShiftLeft,  new(0, "<<", (double left, double right) => (int)left << (int)right) },
             { TokenKind.ShiftRight, new(0, ">>", (double left, double right) => (int)left >> (int)right) },
+        };
+
+    public static readonly Dictionary<string, TokenKind> Tokens =
+        new()
+        {
+            { "+",  TokenKind.Plus },
+            { "++", TokenKind.Plus },
+            { "-",  TokenKind.Minus },
+            { "+-", TokenKind.Minus },
+            { "--", TokenKind.Minus },
+            { "-+", TokenKind.Minus },
+            { "*",  TokenKind.Multiply },
+            { "*+", TokenKind.Multiply },
+            { "/",  TokenKind.Divide },
+            { "/+", TokenKind.Divide },
+            { "%",  TokenKind.Modulo },
+            { "%+", TokenKind.Modulo },
+            { "^",  TokenKind.Exponent },
+            { "<<", TokenKind.ShiftLeft },
+            { ">>", TokenKind.ShiftRight },
+            { "(",  TokenKind.OpenParen },
+            { ")",  TokenKind.CloseParen },
+            { ",",  TokenKind.Comma },
+            { "\0", TokenKind.End },
         };
 
     public static readonly Dictionary<string, double> Variables =
