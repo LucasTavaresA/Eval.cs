@@ -72,7 +72,7 @@ public ref struct Lexer
     {
         SkipSpace();
 
-        if (Char == '.')
+        if (Char == '.' && char.IsAsciiDigit(PeekChar()))
         {
             NextChar();
             return new(TokenKind.Number, $"0.{ReadNumber()}");

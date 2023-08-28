@@ -166,8 +166,15 @@ Test(xss.Last(), "last(.4, last(1, 2), 5)");
 xs = new double[] { 1, 2 };
 xss = new double[] { 4, xs.Last(), .5 };
 Test(xss.Last(), "last(4, last(1, 2), .5)");
+Test(xss.Last(), "last(4., last(1, 2), .5)");
+Test(xss.Last(), "last(4, last(1, 2.), .5)");
 Test(7.9 / -0, "7.9/-0", "Lambda function makes this negative ");
 Test(Math.Log(-42), "Math.Log(-42)", "Nan is always false ");
+// TODO(LucasTA): stop numbers that have '..' inside of them and
+// prevent multiple dots so 1.000.000 does not work
+// TODO(LucasTA): try fuzzing to catch more of these
+// Test(xss.Last(), "last(4.., last(1, 2), .5)");
+// Test(xss.Last(), "last(4, last(1, 2..), .5)");
 
 Separator("[Should error properly]");
 Separator();
