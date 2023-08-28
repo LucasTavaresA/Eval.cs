@@ -158,6 +158,14 @@ Test(4 >> 8 >> 1, "  4 >>  8 >>  1");
 Test(+(int)(5.7 * 4) << 6, "  +5.7  *4<<6");
 Test((int)(6.7 / +3) >> 1, "6.7 /+ 3>>  1");
 Test(-5 << 3, "-  5 << 3");
+Test(4/.2, "4/.2");
+Test((int)-.5 << 3, "-.5 << 3");
+xs = new double[] { 1, 2 };
+xss = new double[] { .4, xs.Last(), 5 };
+Test(xss.Last(), "last(.4, last(1, 2), 5)");
+xs = new double[] { 1, 2 };
+xss = new double[] { 4, xs.Last(), .5 };
+Test(xss.Last(), "last(4, last(1, 2), .5)");
 Test(7.9 / -0, "7.9/-0", "Lambda function makes this negative ");
 Test(Math.Log(-42), "Math.Log(-42)", "Nan is always false ");
 
