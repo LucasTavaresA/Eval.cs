@@ -170,11 +170,7 @@ Test(xss.Last(), "last(4., last(1, 2), .5)");
 Test(xss.Last(), "last(4, last(1, 2.), .5)");
 Test(7.9 / -0, "7.9/-0", "Lambda function makes this negative ");
 Test(Math.Log(-42), "Math.Log(-42)", "Nan is always false ");
-// TODO(LucasTA): stop numbers that have '..' inside of them and
-// prevent multiple dots so 1.000.000 does not work
-// TODO(LucasTA): try fuzzing to catch more of these
-// Test(xss.Last(), "last(4.., last(1, 2), .5)");
-// Test(xss.Last(), "last(4, last(1, 2..), .5)");
+// TODO(LucasTA): try fuzzing to catch more edge cases
 
 Separator("[Should error properly]");
 Separator();
@@ -192,6 +188,8 @@ TestExceptions("Empty parens!", "4 /+ 2 * last() + 3");
 TestExceptions("Less arguments than supported!", "Math.Pow(8)");
 TestExceptions("Evaluating empty string ", "");
 TestExceptions("Evaluating null string ", null);
+TestExceptions("Invalid number!", "4.2.0");
+TestExceptions("Invalid number!", "4..");
 
 Separator("[GENERATED]");
 Separator();

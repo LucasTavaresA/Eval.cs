@@ -225,6 +225,15 @@ internal struct Parser
                     output.Add(number);
                     token = lexer.NextToken();
                 }
+                else
+                {
+                    throw new InvalidExpressionException(
+                        $"Invalid number: '{token.Literal}'",
+                        lexer.Input.ToString(),
+                        lexer.Index - token.Literal.Length,
+                        token.Literal.Length
+                    );
+                }
             }
             else if (token.Kind == TokenKind.Variable)
             {
