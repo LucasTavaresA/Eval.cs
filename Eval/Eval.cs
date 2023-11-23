@@ -43,7 +43,7 @@ public ref struct Lexer
 
     public ReadOnlySpan<char> ReadSymbol()
     {
-        var pos = Index;
+        int pos = Index;
 
         while (char.IsAsciiLetter(Char) || Char == '.')
         {
@@ -55,7 +55,7 @@ public ref struct Lexer
 
     public ReadOnlySpan<char> ReadNumber()
     {
-        var pos = Index;
+        int pos = Index;
 
         while (char.IsAsciiDigit(Char) || Char == '.')
         {
@@ -80,8 +80,8 @@ public ref struct Lexer
 
         if (char.IsAsciiDigit(Char))
         {
-            var number = ReadNumber();
-            var additive = PeekChar();
+            ReadOnlySpan<char> number = ReadNumber();
+            char additive = PeekChar();
 
             // Handle scientific notation
             if (Char is 'E' or 'e')
@@ -108,7 +108,7 @@ public ref struct Lexer
 
         if (char.IsAsciiLetter(Char))
         {
-            var symbol = ReadSymbol().ToString();
+            string symbol = ReadSymbol().ToString();
 
             return Char switch
             {
@@ -117,10 +117,10 @@ public ref struct Lexer
             };
         }
 
-        var ch = Char.ToString();
-        var doubleChar = ch + PeekChar();
+        string ch = Char.ToString();
+        string doubleChar = ch + PeekChar();
 
-        if (Tokens.TryGetValue(doubleChar, out var tokenKind))
+        if (Tokens.TryGetValue(doubleChar, out TokenKind tokenKind))
         {
             NextChar();
             NextChar();
@@ -159,10 +159,10 @@ internal struct Parser
 
     internal static List<object> Parse(ref Lexer lexer)
     {
-        var operators = new Stack<object>();
-        var output = new List<object>();
-        var args = new Stack<int>();
-        var token = lexer.NextToken();
+        Stack<object> operators = new();
+        List<object> output = new();
+        Stack<int> args = new();
+        Token token = lexer.NextToken();
 
         // expression starts with additive
         if (token.Kind == TokenKind.Minus)
@@ -179,7 +179,7 @@ internal struct Parser
         {
             if (token.Kind < TokenKind.Number)
             {
-                var op = Operators[token.Kind];
+                Operator op = Operators[token.Kind];
 
                 while (
                     operators.Count > 0
@@ -218,7 +218,7 @@ internal struct Parser
                         token.Literal,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
-                        out var number
+                        out double number
                     )
                 )
                 {
@@ -237,7 +237,7 @@ internal struct Parser
             }
             else if (token.Kind == TokenKind.Variable)
             {
-                if (Variables.TryGetValue(RemovePrefix(token.Literal), out var variable))
+                if (Variables.TryGetValue(RemovePrefix(token.Literal), out double variable))
                 {
                     output.Add(variable);
                     token = lexer.NextToken();
@@ -254,7 +254,7 @@ internal struct Parser
             }
             else if (token.Kind == TokenKind.Function)
             {
-                if (Functions.TryGetValue(RemovePrefix(token.Literal), out var funcall))
+                if (Functions.TryGetValue(RemovePrefix(token.Literal), out Function funcall))
                 {
                     args.Push(1);
                     funcall.Offset = lexer.Index - token.Literal.Length;
@@ -337,10 +337,10 @@ internal struct Parser
                     );
                 }
 
-                if (operators.TryPeek(out var op) && op is Function function)
+                if (operators.TryPeek(out object op) && op is Function function)
                 {
                     _ = operators.Pop();
-                    var received = args.Pop();
+                    int received = args.Pop();
 
                     if (function.Args == 0)
                     {
@@ -374,7 +374,7 @@ internal struct Parser
             }
         }
 
-        foreach (var op in operators)
+        foreach (object op in operators)
         {
             if (op is Paren paren)
             {
@@ -399,11 +399,11 @@ public struct Evaluator
 {
     private static double[] PopArgs(Stack<double> args, int argAmount)
     {
-        var outArgs = new double[argAmount];
+        double[] outArgs = new double[argAmount];
 
-        for (var i = 0; i < argAmount; i++)
+        for (int i = 0; i < argAmount; i++)
         {
-            outArgs[i] = args.TryPop(out var arg)
+            outArgs[i] = args.TryPop(out double arg)
                 ? arg
                 : throw new UnexpectedEvaluationException($"Lack of operands");
         }
@@ -413,10 +413,10 @@ public struct Evaluator
 
     internal static double Evaluate(List<object> expr)
     {
-        var operands = new Stack<double>();
+        Stack<double> operands = new();
         double[] args;
 
-        for (var i = 0; i < expr.Count; i++)
+        for (int i = 0; i < expr.Count; i++)
         {
             switch (expr[i])
             {
@@ -462,14 +462,14 @@ public struct Evaluator
             }
         }
 
-        return operands.TryPop(out var result)
+        return operands.TryPop(out double result)
             ? result
             : throw new UnexpectedEvaluationException($"There is no expression to evaluate");
     }
 
     public static double Evaluate(string expr)
     {
-        var lexer = new Lexer(expr);
+        Lexer lexer = new(expr);
         return Evaluate(Parser.Parse(ref lexer));
     }
 }

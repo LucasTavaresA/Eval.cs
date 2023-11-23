@@ -36,8 +36,8 @@ void Separator(string header = "")
 string GetTokens(string expr)
 {
     Lexer lexer = new(expr);
-    var tokens = "" + lexer.NextToken();
-    var next = lexer.NextToken();
+    string tokens = "" + lexer.NextToken();
+    Token next = lexer.NextToken();
 
     while (next.Kind != TokenKind.End)
     {
@@ -55,7 +55,7 @@ static string Error(string message, string src, int offset, int length)
         return $"{message}";
     }
 
-    var marker = new string(' ', offset);
+    string marker = new(' ', offset);
 
     if (length == 1)
     {

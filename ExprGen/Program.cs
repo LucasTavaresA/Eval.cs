@@ -3,7 +3,7 @@
 
 using System;
 using Eval;
-using static Eval.Globals.TokenKind;
+using static Eval.Globals;
 
 namespace ExprGen;
 
@@ -13,7 +13,7 @@ public struct Program
 
     public static void Main()
     {
-        for (var i = 0; i < Generations; i++)
+        for (int i = 0; i < Generations; i++)
         {
             Console.WriteLine(Generators.Expression());
         }
@@ -50,10 +50,10 @@ public readonly struct Generators
     private static string SpaceOut(string expr)
     {
         Lexer lexer = new(expr);
-        var tokens = Space() + lexer.NextToken();
-        var next = lexer.NextToken();
+        string tokens = Space() + lexer.NextToken();
+        Token next = lexer.NextToken();
 
-        while (next.Kind != End)
+        while (next.Kind != TokenKind.End)
         {
             tokens += Space() + next;
             next = lexer.NextToken();
@@ -87,9 +87,9 @@ public readonly struct Generators
 
     internal static string Expression()
     {
-        var expression = Negative() + Number();
+        string expression = Negative() + Number();
 
-        for (var i = ExprLength.Min; i < Random.Next(ExprLength.Min, ExprLength.Max + 1); i++)
+        for (int i = ExprLength.Min; i < Random.Next(ExprLength.Min, ExprLength.Max + 1); i++)
         {
             expression += Operator() + Number();
         }

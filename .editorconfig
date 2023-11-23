@@ -83,15 +83,15 @@ dotnet_naming_symbols.non_private_readonly_fields.required_modifiers = readonly
 
 dotnet_naming_style.non_private_readonly_field_style.capitalization = pascal_case
 
-# Constants are PascalCase
-dotnet_naming_rule.constants_should_be_pascal_case.severity = suggestion
-dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
-dotnet_naming_rule.constants_should_be_pascal_case.style = constant_style
+# Constants are UPPERCASE
+dotnet_naming_rule.constants_should_be_allupper.severity = suggestion
+dotnet_naming_rule.constants_should_be_allupper.symbols = constants
+dotnet_naming_rule.constants_should_be_allupper.style = allupper
 
 dotnet_naming_symbols.constants.applicable_kinds = field, local
 dotnet_naming_symbols.constants.required_modifiers = const
 
-dotnet_naming_style.constant_style.capitalization = pascal_case
+dotnet_naming_style.constant_style.capitalization = allupper
 
 # Static fields are camelCase and start with s_
 dotnet_naming_rule.static_fields_should_be_camel_case.severity = suggestion
@@ -133,6 +133,10 @@ dotnet_naming_rule.members_should_be_pascal_case.style = pascal_case_style
 
 dotnet_naming_symbols.all_members.applicable_kinds = *
 
+# allow '_' in member names
+[*.{cs,vb}]
+dotnet_diagnostic.CA1707.severity = none
+
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
 file_header_template = Licensed under the LGPL3 license.\nSee the LICENSE file in the project root for more information.
@@ -165,11 +169,6 @@ csharp_style_allow_blank_lines_between_consecutive_braces_experimental = false
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = false
 csharp_style_allow_blank_line_after_token_in_conditional_expression_experimental = false
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = false
-
-# Prefer "var" everywhere
-csharp_style_var_for_built_in_types = true:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = true:suggestion
 
 # Prefer method-like constructs to have a block body
 csharp_style_expression_bodied_methods = false:none
@@ -253,11 +252,11 @@ dotnet_diagnostic.CA1012.severity = warning
 # CA1822: Make member static
 dotnet_diagnostic.CA1822.severity = warning
 
-# Prefer "var" everywhere
-dotnet_diagnostic.IDE0007.severity = warning
-csharp_style_var_for_built_in_types = true:warning
-csharp_style_var_when_type_is_apparent = true:warning
-csharp_style_var_elsewhere = true:warning
+# Prevent "var"
+dotnet_diagnostic.IDE0008.severity = warning
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
 
 # csharp_style_allow_embedded_statements_on_same_line_experimental
 dotnet_diagnostic.IDE2001.severity = warning
