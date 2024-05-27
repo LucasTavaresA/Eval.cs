@@ -24,6 +24,11 @@ double[] xs;
 double[] xss;
 double result;
 
+double Percentage(double x, double y)
+{
+    return x * (y / 100);
+}
+
 void Separator(string header = "")
 {
     string separator = new('-', (80 - header.Length) / 2);
@@ -151,7 +156,10 @@ Test((1 - xs.Average()) * 3, "(1 - average(2, 9, 23, last(4, 5, 1), 3)) * 3");
 xs = new double[] { 1, 2 };
 xss = new double[] { 4, xs.Last(), 5 };
 Test(xss.Last(), "last(4, last(1, 2), 5)");
-Test(921.315 * -20.93 % 34.567, "921.315 * -20.93 % 34.567");
+Test(Percentage(921.315 * -20.93, 34.567), "921.315 * -20.93 % 34.567");
+Test(921.315 * (-20.93 % 34.567), "921.315 * mod(-20.93, 34.567)");
+Test(Percentage(25, 200), "25%200");
+Test(Percentage(200, 25), "200%25");
 Test(1.6 * -6.7 / -9.6, "1.6*-6.7/- 9.6");
 Test(9 >> (int)(3 / +1.2), " 9>>3  /+ 1.2");
 Test(4 >> 8 >> 1, "  4 >>  8 >>  1");
