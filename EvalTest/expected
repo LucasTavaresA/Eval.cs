@@ -164,6 +164,36 @@ Lexicons: - 5 << 3
 Result: -40 = -40
 Passed: ✅
 --------------------------------------------------------------------------------
+Expression: 4/.2
+Lexicons: 4 / 0.2
+Result: 20 = 20
+Passed: ✅
+--------------------------------------------------------------------------------
+Expression: -.5 << 3
+Lexicons: - 0.5 << 3
+Result: 0 = 0
+Passed: ✅
+--------------------------------------------------------------------------------
+Expression: last(.4, last(1, 2), 5)
+Lexicons: last ( 0.4 , last ( 1 , 2 ) , 5 )
+Result: 5 = 5
+Passed: ✅
+--------------------------------------------------------------------------------
+Expression: last(4, last(1, 2), .5)
+Lexicons: last ( 4 , last ( 1 , 2 ) , 0.5 )
+Result: 0.5 = 0.5
+Passed: ✅
+--------------------------------------------------------------------------------
+Expression: last(4., last(1, 2), .5)
+Lexicons: last ( 4. , last ( 1 , 2 ) , 0.5 )
+Result: 0.5 = 0.5
+Passed: ✅
+--------------------------------------------------------------------------------
+Expression: last(4, last(1, 2.), .5)
+Lexicons: last ( 4 , last ( 1 , 2. ) , 0.5 )
+Result: 0.5 = 0.5
+Passed: ✅
+--------------------------------------------------------------------------------
 Expression: 7.9/-0
 Lexicons: 7.9 / - 0
 Result: ∞ = -∞
@@ -219,7 +249,8 @@ Scientific notation cannot have space
 --------------------------------------------------------------------------------
 ExpectedException: '$' is not a invalid character!
 Expression: (1 - Math.Pow($, (1 + 2)))
-Invalid character '$'
+Lexicons: ( 1 - Math.Pow ( $ , ( 1 + 2 ) ) )
+Invalid token: '$'
 (1 - Math.Pow($, (1 + 2)))
               ^
 --------------------------------------------------------------------------------
@@ -253,11 +284,27 @@ Math.Pow(8)
 --------------------------------------------------------------------------------
 ExpectedException: Evaluating empty string 
 Expression: 
-Expression cannot be empty
+Lexicons:  
+Unexpected failure to evaluate: There is no expression to evaluate.
 --------------------------------------------------------------------------------
 ExpectedException: Evaluating null string 
 Expression: 
-Expression cannot be null
+Lexicons:  
+Unexpected failure to evaluate: There is no expression to evaluate.
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number!
+Expression: 4.2.0
+Lexicons: 4.2.0
+Invalid number: '4.2.0'
+4.2.0
+^~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number!
+Expression: 4..
+Lexicons: 4..
+Invalid number: '4..'
+4..
+^~^
 --------------------------------------------------------------------------------
 ----------------------------------[GENERATED]----------------------------------
 --------------------------------------------------------------------------------
