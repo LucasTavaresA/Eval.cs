@@ -3,68 +3,70 @@
 
 using System;
 
-namespace Eval;
-
-public class UnexpectedEvaluationException : Exception
+namespace Eval
 {
-    public string Reason { get; }
 
-    public override string Message
-        => Reason == ""
-            ? "Unexpected failure to evaluate."
-            : $"Unexpected failure to evaluate: {Reason}.";
-
-    public UnexpectedEvaluationException(string reason)
+    public class UnexpectedEvaluationException : Exception
     {
-        Reason = reason;
-    }
-}
+        public string Reason { get; }
 
-public class InvalidExpressionException : InvalidOperationException
-{
-    public string Src { get; }
-    public int Offset { get; }
-    public int Length { get; }
+        public override string Message
+            => Reason == ""
+                ? "Unexpected failure to evaluate."
+                : $"Unexpected failure to evaluate: {Reason}.";
 
-    public InvalidExpressionException(string message, string src, int offset, int length)
-        : base(message)
-    {
-        Src = src;
-        Offset = offset;
-        Length = length;
-    }
-}
-
-public class ArgumentAmountException : ArgumentException
-{
-    public override string Message
-        => $"{Function}() expects {Expected} arguments but received {Received}";
-    public string Src { get; }
-    public string Function { get; }
-    public int Expected { get; }
-    public int Received { get; }
-    public int Offset { get; }
-    public int Length { get; }
-
-    public ArgumentAmountException(int received)
-    {
-        Received = received;
+        public UnexpectedEvaluationException(string reason)
+        {
+            Reason = reason;
+        }
     }
 
-    public ArgumentAmountException(
-        string src,
-        string function,
-        int expected,
-        int received,
-        int offset,
-        int length
-    )
+    public class InvalidExpressionException : InvalidOperationException
     {
-        Src = src;
-        Function = function;
-        Expected = expected;
-        Received = received;
-        Offset = offset;
-        Length = length;
+        public string Src { get; }
+        public int Offset { get; }
+        public int Length { get; }
+
+        public InvalidExpressionException(string message, string src, int offset, int length)
+            : base(message)
+        {
+            Src = src;
+            Offset = offset;
+            Length = length;
+        }
+    }
+
+    public class ArgumentAmountException : ArgumentException
+    {
+        public override string Message
+            => $"{Function}() expects {Expected} arguments but received {Received}";
+        public string Src { get; }
+        public string Function { get; }
+        public int Expected { get; }
+        public int Received { get; }
+        public int Offset { get; }
+        public int Length { get; }
+
+        public ArgumentAmountException(int received)
+        {
+            Received = received;
+        }
+
+        public ArgumentAmountException(
+            string src,
+            string function,
+            int expected,
+            int received,
+            int offset,
+            int length
+        )
+        {
+            Src = src;
+            Function = function;
+            Expected = expected;
+            Received = received;
+            Offset = offset;
+            Length = length;
+        }
     }
 }
