@@ -86,6 +86,8 @@ void TestExceptions(string expectedException, string expression)
     {
         Console.WriteLine($"Lexicons: {GetTokens(expression)}");
         result = Evaluator.Evaluate(expression);
+        Console.WriteLine("❌ TestExceptions() Should not be evaluated Correctly!");
+        Environment.Exit(1);
     }
     catch (Exception e)
     {
@@ -192,7 +194,7 @@ TestExceptions("Closing unexisting paren!", "6 +3) /5-+8%6 / 8 ^5 ^4 * 2*+1");
 TestExceptions("Opened paren is not closed!", "(1 - Math.Pow(2, (1 + 2) * 3) * 3");
 TestExceptions("Not closing early opened function!", "1 - Math.Pow(2, (1 + 2) * 3 * 3");
 TestExceptions("scientific notation cannot have space", "2e +10");
-TestExceptions("'$' is not a invalid character!", "(1 - Math.Pow($, (1 + 2)))");
+TestExceptions("'$' is not a valid character!", "(1 - Math.Pow($, (1 + 2)))");
 TestExceptions("More arguments than supported!", "Math.Pow(8, 4, -2, 5, 4)");
 TestExceptions("Empty parens!", "last()");
 TestExceptions("Empty parens!", "4 /+ 2 * last() + 3");
