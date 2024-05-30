@@ -183,6 +183,9 @@ Test(Math.Log(-42), "Math.Log(-42)", "Nan is always false ");
 Separator("[Should error properly]");
 Separator();
 
+TestExceptions("Lack of operands!", "-");
+TestExceptions("Lack of operands!", "+");
+TestExceptions("Lack of operands!", "(9)+");
 TestExceptions("Invalid function!", "avg(2, 3, 5)");
 TestExceptions("Invalid variable!", "average(2, pie, 5)");
 TestExceptions("Closing unexisting paren!", "6 +3) /5-+8%6 / 8 ^5 ^4 * 2*+1");

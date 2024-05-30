@@ -221,6 +221,21 @@ Passed: Nan is always false ❌
 --------------------------------------------------------------------------------
 ----------------------------[Should error properly]----------------------------
 --------------------------------------------------------------------------------
+ExpectedException: Lack of operands!
+Expression: -
+Lexicons: -
+Unexpected failure to evaluate: Lack of operands.
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operands!
+Expression: +
+Lexicons: +
+Unexpected failure to evaluate: Lack of operands.
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operands!
+Expression: (9)+
+Lexicons: ( 9 ) +
+Unexpected failure to evaluate: Lack of operands.
+--------------------------------------------------------------------------------
 ExpectedException: Invalid function!
 Expression: avg(2, 3, 5)
 Lexicons: avg ( 2 , 3 , 5 )

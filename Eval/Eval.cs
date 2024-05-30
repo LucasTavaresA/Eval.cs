@@ -200,6 +200,7 @@ namespace Eval
             }
             else if (token.Kind == TokenKind.Plus)
             {
+                operators.Push(Positive);
                 token = lexer.NextToken();
             }
 

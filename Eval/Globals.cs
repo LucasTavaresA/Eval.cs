@@ -11,6 +11,7 @@ namespace Eval
     public readonly struct Globals
     {
         public static readonly Func<double, double> Negative = (double val) => -val;
+        public static readonly Func<double, double> Positive = (double val) => +val;
 
         public readonly struct Token
         {
