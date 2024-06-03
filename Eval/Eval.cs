@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using static Eval.Globals;
+using static Eval.Ascii;
 
 namespace Eval
 {
@@ -22,21 +23,6 @@ namespace Eval
             NextIndex = 0;
             Char = '\0';
             NextChar();
-        }
-
-        private static bool IsAsciiLetter(char c)
-        {
-            return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-        }
-
-        private static bool IsAsciiDigit(char c)
-        {
-            return c >= '0' && c <= '9';
-        }
-
-        private static bool IsWhiteSpace(char c)
-        {
-            return c == ' ' || c >= '\t' && c <= '\r';
         }
 
         public void NextChar()
