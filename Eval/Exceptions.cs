@@ -5,19 +5,11 @@ using System;
 
 namespace Eval
 {
-
     public class UnexpectedEvaluationException : Exception
     {
-        public string Reason { get; }
-
-        public override string Message
-            => Reason == ""
-                ? "Unexpected failure to evaluate."
-                : $"Unexpected failure to evaluate: {Reason}.";
-
-        public UnexpectedEvaluationException(string reason)
+        public UnexpectedEvaluationException(string message)
+            : base(message)
         {
-            Reason = reason;
         }
     }
 
