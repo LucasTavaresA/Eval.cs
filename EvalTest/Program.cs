@@ -203,6 +203,7 @@ TestExceptions("Evaluating empty string ", "");
 TestExceptions("Evaluating null string ", null);
 TestExceptions("Invalid number!", "4.2.0");
 TestExceptions("Invalid number!", "4..");
+TestExceptions("Lack of operator after function!", "Math.Pow(8, 7)6");
 
 Separator("[GENERATED]");
 Separator();

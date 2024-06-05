@@ -374,9 +374,25 @@ namespace Eval
                         }
 
                         output.Add(function);
-                    }
+                        token = lexer.NextToken();
 
-                    token = lexer.NextToken();
+                        if (token.Kind is TokenKind.Number
+                                        or TokenKind.Function
+                                        or TokenKind.Variable
+                                        or TokenKind.OpenParen)
+                        {
+                            throw new InvalidExpressionException(
+                                $"Lack of operator after function",
+                                lexer.Input.ToString(),
+                                lexer.Index - token.Literal.Length,
+                                token.Literal.Length
+                            );
+                        }
+                    }
+                    else
+                    {
+                        token = lexer.NextToken();
+                    }
                 }
                 else
                 {
