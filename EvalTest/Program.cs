@@ -180,6 +180,10 @@ Test(xss.Last(), "last(4., last(1, 2), .5)");
 Test(xss.Last(), "last(4, last(1, 2.), .5)");
 Test(7.9 / -0, "7.9/-0", "Lambda function makes this negative ");
 Test(Math.Log(-42), "Math.Log(-42)", "Nan is always false ");
+Test(Math.Pow(4, 7), "4 ^ 7");
+Test((1 - Math.Pow(2, (1 + 2) * 3)) * 3, "(1 - (2 ^ ((1 + 2) * 3))) * 3");
+Test(Math.Pow(-new double[] { 2, 3, 5 }.Average(), -5), "(-average(2, 3, 5)^ -5)");
+Test(Math.Pow(-new double[] { 2, 3, 5 }.Average(), 4), "(-average(2, 3, 5)^ 4)");
 // TODO(LucasTA): try fuzzing to catch more edge cases
 
 Separator("[Should error properly]");
