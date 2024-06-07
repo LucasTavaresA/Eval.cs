@@ -24,6 +24,11 @@ double[] xs;
 double[] xss;
 double result;
 
+static int Factorial(int n)
+{
+    return n == 0 ? 1 : Enumerable.Range(1, n).Aggregate(1, (acc, x) => acc * x);
+}
+
 double Percentage(double x, double y)
 {
     return x * (y / 100);
@@ -184,6 +189,16 @@ Test(Math.Pow(4, 7), "4 ^ 7");
 Test((1 - Math.Pow(2, (1 + 2) * 3)) * 3, "(1 - (2 ^ ((1 + 2) * 3))) * 3");
 Test(Math.Pow(-new double[] { 2, 3, 5 }.Average(), -5), "(-average(2, 3, 5)^ -5)");
 Test(Math.Pow(-new double[] { 2, 3, 5 }.Average(), 4), "(-average(2, 3, 5)^ 4)");
+Test(Factorial(5), "5!");
+Test(Factorial(0), "0!");
+Test(Factorial(1), "1!");
+Test(-Factorial(0), "-0!");
+Test(-Factorial(5), "-5!");
+Test(Factorial(15), "15!");
+Test(1 + 1 - Factorial((int)Math.PI), "1 + 1 - Math.PI!");
+Test(-2 + Math.PI - Factorial((int)Math.Ceiling(3.2)), "-2 + Math.PI - Math.Ceiling(3.2)!");
+Test(23 + Factorial((int)2e-13) * 2.3, "23 + 2e-13! * 2.3");
+
 // TODO(LucasTA): try fuzzing to catch more edge cases
 
 Separator("[Should error properly]");

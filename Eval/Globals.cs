@@ -12,6 +12,10 @@ namespace Eval
     {
         public static readonly Func<double, double> Negative = (double val) => -val;
         public static readonly Func<double, double> Positive = (double val) => +val;
+        public static readonly Func<int, int> Factorial = (int n) =>
+        {
+            return n == 0 ? 1 : Enumerable.Range(1, n).Aggregate(1, (acc, x) => acc * x);
+        };
 
         public readonly struct Token
         {
@@ -73,6 +77,7 @@ namespace Eval
             ShiftRight,
 
             Number = 8,
+            Factorial,
             Variable,
             Function,
 
@@ -114,6 +119,7 @@ namespace Eval
                 { "%",  TokenKind.Percentage },
                 { "%+", TokenKind.Percentage },
                 { "^",  TokenKind.Exponent },
+                { "!",  TokenKind.Factorial },
                 { "<<", TokenKind.ShiftLeft },
                 { ">>", TokenKind.ShiftRight },
                 { "(",  TokenKind.OpenParen },

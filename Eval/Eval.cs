@@ -394,6 +394,11 @@ namespace Eval
                         token = lexer.NextToken();
                     }
                 }
+                else if (token.Kind is TokenKind.Factorial)
+                {
+                    output.Add(Factorial);
+                    token = lexer.NextToken();
+                }
                 else
                 {
                     throw new InvalidExpressionException(
@@ -457,6 +462,10 @@ namespace Eval
                     case Func<double, double> negative:
                         args = PopArgs(operands, 1);
                         operands.Push(negative(args[0]));
+                        break;
+                    case Func<int, int> factorial:
+                        args = PopArgs(operands, 1);
+                        operands.Push(factorial((int)args[0]));
                         break;
                     case Operator op:
                         args = PopArgs(operands, 2);
