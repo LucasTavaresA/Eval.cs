@@ -198,6 +198,8 @@ Test(Factorial(15), "15!");
 Test(1 + 1 - Factorial((int)Math.PI), "1 + 1 - Math.PI!");
 Test(-2 + Math.PI - Factorial((int)Math.Ceiling(3.2)), "-2 + Math.PI - Math.Ceiling(3.2)!");
 Test(23 + Factorial((int)2e-13) * 2.3, "23 + 2e-13! * 2.3");
+// NOTE(LucasTA): This is valid c# scientific notation WTF!
+Test(.2e3, ".2e3");
 
 // TODO(LucasTA): try fuzzing to catch more edge cases
 
@@ -212,7 +214,7 @@ TestExceptions("Invalid variable!", "average(2, pie, 5)");
 TestExceptions("Closing unexisting paren!", "6 +3) /5-+8%6 / 8 ^5 ^4 * 2*+1");
 TestExceptions("Opened paren is not closed!", "(1 - Math.Pow(2, (1 + 2) * 3) * 3");
 TestExceptions("Not closing early opened function!", "1 - Math.Pow(2, (1 + 2) * 3 * 3");
-TestExceptions("scientific notation cannot have space", "2e +10");
+TestExceptions("Invalid number", "2e +10");
 TestExceptions("'$' is not a valid character!", "(1 - Math.Pow($, (1 + 2)))");
 TestExceptions("More arguments than supported!", "Math.Pow(8, 4, -2, 5, 4)");
 TestExceptions("Empty parens!", "last()");
@@ -223,6 +225,28 @@ TestExceptions("Evaluating null string ", null);
 TestExceptions("Invalid number!", "4.2.0");
 TestExceptions("Invalid number!", "4..");
 TestExceptions("Lack of operator after function!", "Math.Pow(8, 7)6");
+TestExceptions("Invalid variable!", "pi7");
+TestExceptions("Invalid variable!", "last(8, pi7)");
+TestExceptions("Lack of operator", "last(9 pi, 7)");
+TestExceptions("Invalid variable!", "last(9, e9)");
+TestExceptions("Lack of operator", "last(9, e 9)");
+TestExceptions("Lack of operator", "pi last(9, 7)");
+TestExceptions("Lack of operator", "pi (last(9, 7))");
+TestExceptions("Lack of operator", "8 last(e, 7)");
+TestExceptions("Lack of operator after function!", "Math.Pow(8, 7)(6)");
+TestExceptions("Lack of operator after function!", "Math.Pow(8, 7) (6)");
+TestExceptions("Lack of operator after closed pared", "(pi)Math.Pow(8, 7) + 6");
+TestExceptions("Lack of operator after closed pared", "(pi) Math.Pow(8, 7) + 6");
+TestExceptions("Empty parens", "()Math.Pow(8, 7)6");
+TestExceptions("Closing unexisting paren", ")Math.Pow(8, 7)6");
+TestExceptions("Lack of operator after function!", "(Math.Pow(8, 7)6");
+TestExceptions("Invalid number", ".t3");
+TestExceptions("Invalid number", ".e3");
+TestExceptions("Invalid number", ".23s3");
+TestExceptions("Invalid number", "8e");
+TestExceptions("Invalid number", "8e + pi7");
+TestExceptions("Invalid number", "last(8e, 7)");
+TestExceptions("Invalid number", "last(9pi, 7)");
 
 Separator("[GENERATED]");
 Separator();

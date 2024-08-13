@@ -180,32 +180,32 @@ Result: -40 = -40
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: 4/.2
-Lexicons: 4 / 0.2
+Lexicons: 4 / .2
 Result: 20 = 20
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: -.5 << 3
-Lexicons: - 0.5 << 3
+Lexicons: - .5 << 3
 Result: 0 = 0
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: last(.4, last(1, 2), 5)
-Lexicons: last ( 0.4 , last ( 1 , 2 ) , 5 )
+Lexicons: last ( .4 , last ( 1 , 2 ) , 5 )
 Result: 5 = 5
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: last(4, last(1, 2), .5)
-Lexicons: last ( 4 , last ( 1 , 2 ) , 0.5 )
+Lexicons: last ( 4 , last ( 1 , 2 ) , .5 )
 Result: 0.5 = 0.5
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: last(4., last(1, 2), .5)
-Lexicons: last ( 4. , last ( 1 , 2 ) , 0.5 )
+Lexicons: last ( 4. , last ( 1 , 2 ) , .5 )
 Result: 0.5 = 0.5
 Passed: ✅
 --------------------------------------------------------------------------------
 Expression: last(4, last(1, 2.), .5)
-Lexicons: last ( 4 , last ( 1 , 2. ) , 0.5 )
+Lexicons: last ( 4 , last ( 1 , 2. ) , .5 )
 Result: 0.5 = 0.5
 Passed: ✅
 --------------------------------------------------------------------------------
@@ -284,6 +284,11 @@ Lexicons: 23 + 2e-13 ! * 2.3
 Result: 25.3 = 25.3
 Passed: ✅
 --------------------------------------------------------------------------------
+Expression: .2e3
+Lexicons: .2e3
+Result: 200 = 200
+Passed: ✅
+--------------------------------------------------------------------------------
 ----------------------------[Should error properly]----------------------------
 --------------------------------------------------------------------------------
 ExpectedException: Lack of operands!
@@ -336,11 +341,12 @@ Opened paren is not closed
 1 - Math.Pow(2, (1 + 2) * 3 * 3
             ^
 --------------------------------------------------------------------------------
-ExpectedException: scientific notation cannot have space
+ExpectedException: Invalid number
 Expression: 2e +10
-Scientific notation cannot have space
+Lexicons: 2e + 10
+Invalid number: '2e'
 2e +10
-  ^
+^^
 --------------------------------------------------------------------------------
 ExpectedException: '$' is not a valid character!
 Expression: (1 - Math.Pow($, (1 + 2)))
@@ -407,6 +413,160 @@ Lexicons: Math.Pow ( 8 , 7 ) 6
 Lack of operator after function
 Math.Pow(8, 7)6
               ^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid variable!
+Expression: pi7
+Lexicons: pi7
+Invalid variable: 'pi7'
+pi7
+^~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid variable!
+Expression: last(8, pi7)
+Lexicons: last ( 8 , pi7 )
+Invalid variable: 'pi7'
+last(8, pi7)
+        ^~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator
+Expression: last(9 pi, 7)
+Lexicons: last ( 9 pi , 7 )
+Lack of operator between '9' and 'pi'
+last(9 pi, 7)
+     ^~~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid variable!
+Expression: last(9, e9)
+Lexicons: last ( 9 , e9 )
+Invalid variable: 'e9'
+last(9, e9)
+        ^^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator
+Expression: last(9, e 9)
+Lexicons: last ( 9 , e 9 )
+Lack of operator between 'e' and '9'
+last(9, e 9)
+        ^~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator
+Expression: pi last(9, 7)
+Lexicons: pi last ( 9 , 7 )
+Lack of operator between 'pi' and 'last'
+pi last(9, 7)
+^~~~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator
+Expression: pi (last(9, 7))
+Lexicons: pi ( last ( 9 , 7 ) )
+Lack of operator between 'pi' and '('
+pi (last(9, 7))
+^~~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator
+Expression: 8 last(e, 7)
+Lexicons: 8 last ( e , 7 )
+Lack of operator between '8' and 'last'
+8 last(e, 7)
+^~~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator after function!
+Expression: Math.Pow(8, 7)(6)
+Lexicons: Math.Pow ( 8 , 7 ) ( 6 )
+Lack of operator after function
+Math.Pow(8, 7)(6)
+              ^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator after function!
+Expression: Math.Pow(8, 7) (6)
+Lexicons: Math.Pow ( 8 , 7 ) ( 6 )
+Lack of operator after function
+Math.Pow(8, 7) (6)
+               ^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator after closed pared
+Expression: (pi)Math.Pow(8, 7) + 6
+Lexicons: ( pi ) Math.Pow ( 8 , 7 ) + 6
+Lack of operator after closed paren
+(pi)Math.Pow(8, 7) + 6
+   ^~~~~~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator after closed pared
+Expression: (pi) Math.Pow(8, 7) + 6
+Lexicons: ( pi ) Math.Pow ( 8 , 7 ) + 6
+Lack of operator after closed paren
+(pi) Math.Pow(8, 7) + 6
+   ^~~~~~~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Empty parens
+Expression: ()Math.Pow(8, 7)6
+Lexicons: ( ) Math.Pow ( 8 , 7 ) 6
+Empty parens
+()Math.Pow(8, 7)6
+^^
+--------------------------------------------------------------------------------
+ExpectedException: Closing unexisting paren
+Expression: )Math.Pow(8, 7)6
+Lexicons: ) Math.Pow ( 8 , 7 ) 6
+Closing unexsistent paren
+)Math.Pow(8, 7)6
+^
+--------------------------------------------------------------------------------
+ExpectedException: Lack of operator after function!
+Expression: (Math.Pow(8, 7)6
+Lexicons: ( Math.Pow ( 8 , 7 ) 6
+Lack of operator after function
+(Math.Pow(8, 7)6
+               ^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: .t3
+Lexicons: .t3
+Invalid number: '.t3'
+.t3
+^~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: .e3
+Lexicons: .e3
+Invalid number: '.e3'
+.e3
+^~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: .23s3
+Lexicons: .23s3
+Invalid number: '.23s3'
+.23s3
+^~~~^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: 8e
+Lexicons: 8e
+Invalid number: '8e'
+8e
+^^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: 8e + pi7
+Lexicons: 8e + pi7
+Invalid number: '8e'
+8e + pi7
+^^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: last(8e, 7)
+Lexicons: last ( 8e , 7 )
+Invalid number: '8e'
+last(8e, 7)
+     ^^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid number
+Expression: last(9pi, 7)
+Lexicons: last ( 9pi , 7 )
+Invalid number: '9pi'
+last(9pi, 7)
+     ^~^
 --------------------------------------------------------------------------------
 ----------------------------------[GENERATED]----------------------------------
 --------------------------------------------------------------------------------

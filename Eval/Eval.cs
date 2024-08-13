@@ -49,7 +49,7 @@ namespace Eval
         {
             int pos = Index;
 
-            while (IsAsciiLetter(Char) || Char == '.')
+            while (IsAsciiLetter(Char) || Char == '.' || IsAsciiDigit(Char))
             {
                 NextChar();
             }
@@ -76,38 +76,26 @@ namespace Eval
         {
             SkipSpace();
 
-            if (Char == '.' && IsAsciiDigit(PeekChar()))
+            if (Char == '.')
             {
-                NextChar();
-                return new(TokenKind.Number, $"0.{ReadNumber().ToString()}");
+                return new(TokenKind.Number, ReadSymbol().ToString());
             }
 
             if (IsAsciiDigit(Char))
             {
-                ReadOnlySpan<char> number = ReadNumber();
-                char additive = PeekChar();
+                ReadOnlySpan<char> symbol = ReadSymbol();
 
-                // Handle scientific notation
-                if (Char is 'E' or 'e')
+                if (symbol[^1] == 'e')
                 {
-                    if (additive is '+' or '-')
+                    if (Char is '+' or '-')
                     {
+                        symbol = symbol.ToString() + Char;
                         NextChar();
-                        NextChar();
-                        return new(TokenKind.Number, $"{number.ToString()}e{additive}{ReadNumber().ToString()}");
-                    }
-                    else
-                    {
-                        throw new InvalidExpressionException(
-                            "Scientific notation cannot have space",
-                            Input.ToString(),
-                            NextIndex,
-                            1
-                        );
+                        symbol = symbol.ToString() + ReadSymbol().ToString();
                     }
                 }
 
-                return new(TokenKind.Number, number.ToString());
+                return new(TokenKind.Number, symbol.ToString());
             }
 
             if (IsAsciiLetter(Char))
@@ -238,7 +226,24 @@ namespace Eval
                     )
                     {
                         output.Add(number);
+                        int previousPosition = lexer.Index - token.Literal.Length;
                         token = lexer.NextToken();
+
+                        if (
+                            token.Kind
+                            is TokenKind.Number
+                                or TokenKind.Function
+                                or TokenKind.Variable
+                                or TokenKind.OpenParen
+                        )
+                        {
+                            throw new InvalidExpressionException(
+                                $"Lack of operator between '{number}' and '{token.Literal}'",
+                                lexer.Input.ToString(),
+                                previousPosition,
+                                lexer.Index - previousPosition
+                            );
+                        }
                     }
                     else
                     {
@@ -252,10 +257,29 @@ namespace Eval
                 }
                 else if (token.Kind == TokenKind.Variable)
                 {
+                    string previousToken = token.Literal;
+
                     if (Variables.TryGetValue(RemovePrefix(token.Literal), out double variable))
                     {
                         output.Add(variable);
+                        int previousPosition = lexer.Index - token.Literal.Length;
                         token = lexer.NextToken();
+
+                        if (
+                            token.Kind
+                            is TokenKind.Number
+                                or TokenKind.Function
+                                or TokenKind.Variable
+                                or TokenKind.OpenParen
+                        )
+                        {
+                            throw new InvalidExpressionException(
+                                $"Lack of operator between '{previousToken}' and '{token.Literal}'",
+                                lexer.Input.ToString(),
+                                previousPosition,
+                                lexer.Index - previousPosition
+                            );
+                        }
                     }
                     else
                     {
@@ -376,10 +400,13 @@ namespace Eval
                         output.Add(function);
                         token = lexer.NextToken();
 
-                        if (token.Kind is TokenKind.Number
-                                        or TokenKind.Function
-                                        or TokenKind.Variable
-                                        or TokenKind.OpenParen)
+                        if (
+                            token.Kind
+                            is TokenKind.Number
+                                or TokenKind.Function
+                                or TokenKind.Variable
+                                or TokenKind.OpenParen
+                        )
                         {
                             throw new InvalidExpressionException(
                                 $"Lack of operator after function",
@@ -391,7 +418,24 @@ namespace Eval
                     }
                     else
                     {
+                        int closeParenPostion = lexer.Index - token.Literal.Length;
                         token = lexer.NextToken();
+
+                        if (
+                            token.Kind
+                            is TokenKind.Number
+                                or TokenKind.Function
+                                or TokenKind.Variable
+                                or TokenKind.OpenParen
+                        )
+                        {
+                            throw new InvalidExpressionException(
+                                $"Lack of operator after closed paren",
+                                lexer.Input.ToString(),
+                                closeParenPostion,
+                                lexer.Index - closeParenPostion
+                            );
+                        }
                     }
                 }
                 else if (token.Kind is TokenKind.Factorial)
