@@ -247,6 +247,9 @@ TestExceptions("Invalid number", "8e");
 TestExceptions("Invalid number", "8e + pi7");
 TestExceptions("Invalid number", "last(8e, 7)");
 TestExceptions("Invalid number", "last(9pi, 7)");
+TestExceptions("Invalid comma", "(pi, 7)");
+TestExceptions("Invalid comma", "(pi , 7)");
+TestExceptions("Invalid comma", "(pi ,7)");
 
 Separator("[GENERATED]");
 Separator();

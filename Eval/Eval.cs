@@ -343,7 +343,19 @@ namespace Eval
                         output.Add(operators.Pop());
                     }
 
-                    args.Push(args.Pop() + 1);
+                    if (args.TryPop(out int arg))
+                    {
+                        args.Push(arg + 1);
+                    }
+                    else
+                    {
+                        throw new InvalidExpressionException(
+                            "Invalid comma, you are not passing arguments to a function",
+                            lexer.Input.ToString(),
+                            lexer.Index - 1,
+                            1
+                        );
+                    }
 
                     token = lexer.NextToken();
 

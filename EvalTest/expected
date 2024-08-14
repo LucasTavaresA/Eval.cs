@@ -568,5 +568,26 @@ Invalid number: '9pi'
 last(9pi, 7)
      ^~^
 --------------------------------------------------------------------------------
+ExpectedException: Invalid comma
+Expression: (pi, 7)
+Lexicons: ( pi , 7 )
+Invalid comma, you are not passing arguments to a function
+(pi, 7)
+   ^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid comma
+Expression: (pi , 7)
+Lexicons: ( pi , 7 )
+Invalid comma, you are not passing arguments to a function
+(pi , 7)
+    ^
+--------------------------------------------------------------------------------
+ExpectedException: Invalid comma
+Expression: (pi ,7)
+Lexicons: ( pi , 7 )
+Invalid comma, you are not passing arguments to a function
+(pi ,7)
+    ^
+--------------------------------------------------------------------------------
 ----------------------------------[GENERATED]----------------------------------
 --------------------------------------------------------------------------------
