@@ -154,6 +154,7 @@ namespace Eval
                 { "firstordefault",   new("firstordefault",   0, (Func<double[], double>)((double[] args) => args.FirstOrDefault())) },
                 { "lastordefault",    new("lastordefault",    0, (Func<double[], double>)((double[] args) => args.LastOrDefault())) },
                 { "abs",              new("abs",              1, (Func<double, double>)((double arg) => Math.Abs(arg))) },
+                { "ceil",             new("ceil",             1, (Func<double, double>)((double arg) => Math.Ceiling(arg))) },
                 { "ceiling",          new("ceiling",          1, (Func<double, double>)((double arg) => Math.Ceiling(arg))) },
                 { "floor",            new("floor",            1, (Func<double, double>)((double arg) => Math.Floor(arg))) },
                 { "log",              new("log",              1, (Func<double, double>)((double arg) => Math.Log(arg))) },
